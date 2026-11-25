@@ -22,6 +22,7 @@ button, input { font: inherit; color: inherit; }
 .site-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 77px; }
 .site-logo { width: clamp(160px, 27vw, 326px); height: auto; display: block; }
 .site-header p { margin: 0; font-size: 18px; line-height: 1.2; text-align: right; }
+@media (max-width: 420px) { .site-header p { font-size: 15px; } } /* keeps the header text on two lines on phones */
 .site-footer { display: flex; justify-content: space-between; margin-top: 77px; font-size: 16px; }
 .cols { display: grid; grid-template-columns: var(--form-w) minmax(0, 1fr); gap: var(--gap-xl); align-items: start; }
 @media (max-width: 960px) {

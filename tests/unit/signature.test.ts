@@ -87,13 +87,13 @@ describe('signature HTML is email-safe', () => {
   it('draws the CTA button like the Figma component', () => {
     const cell = html.match(/<td bgcolor="#262626" style="([^"]+)">/)![1];
     expect(cell).toBe('background-color:#262626;border-radius:6px;padding:0;'); // dark, 6 px corners
-    expect(html).toContain('<td valign="middle" style="padding:11px 10px 11px 16px;"><a href="https://calendly.com/x" style="display:block;font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:18px;letter-spacing:0.07px;color:#FDFDFC;text-decoration:none;white-space:nowrap;">Book a call</a></td>');
+    expect(html).toContain('<td valign="middle" style="padding:13px 10px 13px 16px;"><a href="https://calendly.com/x" style="display:block;font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:18px;letter-spacing:0.07px;color:#FDFDFC;text-decoration:none;white-space:nowrap;">Book a call</a></td>');
     expect(html).toContain('<td valign="middle" style="padding:9px 7px 9px 0;"><a href="https://calendly.com/x" style="display:block;text-decoration:none;"><img src="https://signatures.heights.digital/icons/cta-arrow.png" width="22" height="22" alt=""');
     expect(html).not.toMatch(/text-transform:uppercase/); // sentence case, as in Figma
   });
   it('keeps the button without the arrow chip when the chip image isn’t available', () => {
     const h = buildSignatureHtml({ ...full, cta: { text: 'Book a call', href: 'https://calendly.com/x' } });
-    expect(h).toContain('padding:11px 16px 11px 16px;');
+    expect(h).toContain('padding:13px 16px 13px 16px;');
     expect(h).not.toContain('cta-arrow');
   });
 });

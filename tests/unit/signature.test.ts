@@ -11,7 +11,6 @@ const full: SignatureData = {
   phone: { display: '+351 912 345 678', href: 'tel:+351912345678' },
   linkedin: 'https://linkedin.com/in/someone',
   cta: { text: 'Book a call', href: 'https://calendly.com/x', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png', arrowDark: 'https://signatures.heights.digital/icons/cta-arrow-dark.png' },
-  quote: { text: 'The best agency we’ve worked with.', author: 'Sarah Lee, Acme Ltd' },
   icons: {
     website: { light: 'https://signatures.heights.digital/icons/v2/website.png', dark: 'https://signatures.heights.digital/icons/v2/website-white.png' },
     phone: { light: 'https://signatures.heights.digital/icons/v2/phone.png', dark: 'https://signatures.heights.digital/icons/v2/phone-white.png' },
@@ -44,7 +43,7 @@ describe('signature HTML is email-safe', () => {
   });
   it('includes every filled-in part', () => {
     for (const s of ['Anastasiia Cherevychna', 'Designer', 'heights.digital', 'mailto:name@heights.digital',
-      'tel:+351912345678', 'LinkedIn', 'Book a call', 'bgcolor="#262626"', 'Sarah Lee']) expect(html).toContain(s);
+      'tel:+351912345678', 'LinkedIn', 'Book a call', 'bgcolor="#262626"']) expect(html).toContain(s);
   });
   it('shows website, phone and LinkedIn as a row of clickable icons (no email icon)', () => {
     const row = html.match(/<table[^>]*margin-top:10px;"><tr>(.*?)<\/tr><\/table>/)![1];
@@ -79,10 +78,8 @@ describe('signature HTML is email-safe', () => {
     expect(h).toContain('A &amp; B &quot;quoted&quot;');
     expect(h).not.toContain('<b>');
   });
-  it('doesn’t double up quote marks or dashes people type themselves', () => {
-    const h = buildSignatureHtml({ name: 'J', title: 'T', quote: { text: '"Great"', author: '- Sam' } });
-    expect(h).toContain('“Great”');
-    expect(h).toContain('–Sam');
+  it('has no quote section any more (no separator line under the details)', () => {
+    expect(html).not.toMatch(/border-top|“|”/);
   });
   it('draws the CTA button like the Figma component', () => {
     const cell = html.match(/<td class="hs-cta" bgcolor="#262626" style="([^"]+)">/)![1];
@@ -99,6 +96,11 @@ describe('signature HTML is email-safe', () => {
     // only one style block, and none at all when there's nothing for dark mode to change
     expect(html.match(/<style/g)).toHaveLength(1);
     expect(buildSignatureHtml({ name: 'J', title: '' })).toContain('.hs-name{color:#FFFFFF!important}'); // even a name alone has something for dark mode
+  });
+  it('sits 16 px below the contact icons, and 14 px below a line of text when there are no icons', () => {
+    expect(html).toContain('<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:separate;margin-top:16px;"><tr><td class="hs-cta"');
+    const noIcons = buildSignatureHtml({ name: 'J', title: 'T', cta: full.cta });
+    expect(noIcons).toContain('style="border-collapse:separate;margin-top:14px;"><tr><td class="hs-cta"');
   });
   it('keeps the button without the arrow chip when the chip image isn’t available', () => {
     const h = buildSignatureHtml({ ...full, cta: { text: 'Book a call', href: 'https://calendly.com/x' } });
@@ -179,7 +181,7 @@ describe('the email address line under the job title', () => {
 describe('text and file versions', () => {
   it('plain text has the essentials', () => {
     expect(buildSignatureText(full)).toBe(
-      'Anastasiia Cherevychna\nDesigner\nname@heights.digital\nheights.digital | +351 912 345 678 | https://linkedin.com/in/someone\nBook a call: https://calendly.com/x\n\n“The best agency we’ve worked with.” –Sarah Lee, Acme Ltd',
+      'Anastasiia Cherevychna\nDesigner\nname@heights.digital\nheights.digital | +351 912 345 678 | https://linkedin.com/in/someone\nBook a call: https://calendly.com/x',
     );
   });
   it('download is a full HTML document', () => {

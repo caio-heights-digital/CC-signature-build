@@ -57,6 +57,7 @@ button, input { font: inherit; color: inherit; }
 .input-row:focus-within { border-bottom: 1px solid var(--charcoal); padding-bottom: 5.5px; }
 .field.invalid .input-row { border-bottom-color: var(--error); }
 .hint { margin: 4px 0 0; font-size: var(--fs-hint); color: var(--light-charcoal); }
+.hint-top { margin: 0; } /* a hint directly under a field's title, above the input */
 .field-error { margin: 4px 0 0; font-size: 13px; color: var(--error); }
 .field-error:empty { display: none; }
 .lock-note { margin: 4px 0 0; font-size: var(--fs-hint); color: var(--light-charcoal); }
@@ -109,7 +110,6 @@ button, input { font: inherit; color: inherit; }
 .right { display: flex; flex-direction: column; gap: var(--gap-xl); min-width: 0; }
 .right-main { display: flex; flex-direction: column; gap: var(--gap-l); }
 .sig-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.note { margin: 0; font-size: 16px; line-height: normal; }
 .seg { display: flex; }
 .seg button { border: 0; padding: 12px 20px; font-size: 16px; line-height: 1; letter-spacing: .16px; cursor: pointer;
   background: var(--lightest-grey); color: var(--light-charcoal); }

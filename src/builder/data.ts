@@ -52,7 +52,6 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
   const chips = purpose === 'preview' || isPublic(arrow) ? { arrow, arrowDark: resolve(CTA_ARROW_DARK_PATH) } : {};
   d.cta = { text: v('ctaText') || CTA_TEXT, href: ctaHref, ...chips };
 
-  if (v('quoteText')) d.quote = { text: v('quoteText'), author: v('quoteAuthor') || undefined };
 
   const icons: SignatureData['icons'] = {};
   for (const k of ICON_KEYS) {

@@ -7,7 +7,7 @@ export const DEFAULT_CLIENT = 'heights';
 
 const ALL_FIELDS: FieldKey[] = [
   'name', 'title', 'website', 'email', 'phone', 'linkedin',
-  'ctaText', 'ctaLink', 'quoteText', 'quoteAuthor',
+  'ctaText', 'ctaLink',
 ];
 
 export function allClients(): Record<string, ClientConfig> {

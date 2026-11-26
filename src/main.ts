@@ -123,7 +123,6 @@ function start(cfg: ClientConfig) {
     // Paired fields re-check each other.
     if (k === 'ctaText' && touched.has('ctaLink')) revalidate('ctaLink');
     if (k === 'ctaLink' && touched.has('ctaText')) revalidate('ctaText');
-    if (k === 'quoteText' && touched.has('quoteAuthor')) revalidate('quoteAuthor');
     return !p;
   }
   function revalidate(k: TextKey) {

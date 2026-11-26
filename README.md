@@ -18,7 +18,7 @@ A web tool that lets each client's team make a consistent email signature: fill 
 6. Commit. The client's link is `…/<client-id>`.
 
 Field names you can use in `defaults`, `locked` and `required`:
-`name, title, website, email, phone, linkedin, ctaText, ctaLink, quoteText, quoteAuthor`.
+`name, title, website, email, phone, linkedin, ctaText, ctaLink`.
 Name, job title, CTA text and CTA link are always required (the CTA button is always in the signature; its text starts as "Book a demo").
 Personal fields (`name`, `title`) can't be locked.
 

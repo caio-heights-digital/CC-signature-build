@@ -37,8 +37,6 @@ test('full signature: fill in, image, copy with hosted image', async ({ page }) 
   await page.fill('#f-linkedin', 'linkedin.com/in/someone');
   await page.fill('#f-ctaText', 'Book a call');
   await page.fill('#f-ctaLink', 'calendly.com/heights');
-  await page.fill('#f-quoteText', 'Some deep and smart optional quote here');
-  await page.fill('#f-quoteAuthor', 'Someone’s name');
 
   const preview = page.locator('#previewInner');
   await expect(preview).toContainText('Anastasiia Cherevychna');
@@ -111,6 +109,27 @@ test('locked fields are hidden, and their values come from the client file', asy
   expect(html).toContain('acme.example'); // locked website comes from the client file
   expect(html).toContain('>Book a call</a>'); // CTA text and link from the client file
   expect(html).toContain('href="https://acme.example/contact"');
+});
+
+test('the last section is called CTA, with just the button text (pre-filled) and link: no quote fields', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('[data-section="extra"]');
+  await expect(section.locator('h3')).toHaveText('CTA');
+  await expect(page.getByText('Extra', { exact: true })).toHaveCount(0);
+  await expect(section.locator('input')).toHaveCount(2);
+  await expect(page.locator('#f-ctaText')).toHaveValue('Book a demo');
+  await expect(page.locator('#f-quoteText, #f-quoteAuthor')).toHaveCount(0);
+  await expect(page.getByText(/quote/i)).toHaveCount(0);
+});
+
+test('the dark-mode note sits under the Image title in the form, not above the preview', async ({ page }) => {
+  await page.goto('/');
+  const note = page.locator('#imageField #imageNote');
+  await expect(note).toHaveText('Each recipient’s email app applies its own dark mode, so check your image works on both.');
+  await expect(page.locator('#preview').locator('..').getByText('applies its own dark mode')).toHaveCount(0);
+  const y = async (sel: string) => (await page.locator(sel).boundingBox())!.y;
+  expect(await y('#imageLabel')).toBeLessThan(await y('#imageNote'));
+  expect(await y('#imageNote')).toBeLessThan(await y('#imageField .drop'));
 });
 
 test('there is no headshot: no upload, no crop, no switch, and nothing for it in the preview or the copy', async ({ page }) => {
@@ -533,7 +552,7 @@ test('contact icons appear as fields are filled in, and each links to the right 
 
 test('the preview stays on screen while the form scrolls', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#f-quoteAuthor').scrollIntoViewIfNeeded();
+  await page.locator('#f-ctaLink').scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   const box = await page.locator('#preview').boundingBox();
   expect(box!.y).toBeGreaterThanOrEqual(0);
@@ -579,8 +598,6 @@ test('screenshots for design review', async ({ page }) => {
   await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.screenshot({ path: 'test-results/empty-image.png', clip: { x: 600, y: 170, width: 740, height: 480 } });
   await addImage(page, 'image-square.png');
-  await page.fill('#f-quoteText', 'Some deep and smart optional quote here');
-  await page.fill('#f-quoteAuthor', 'Someone’s name');
   await page.screenshot({ path: 'test-results/design-match.png', clip: { x: 600, y: 170, width: 740, height: 520 } });
   await page.click('[data-theme-btn="dark"]');
   await page.screenshot({ path: 'test-results/dark.png', clip: { x: 600, y: 170, width: 740, height: 520 } });
@@ -597,9 +614,9 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   await expect(btn).toHaveText('Book a demo');
   const box = (await btn.boundingBox())!;
   expect(box.height).toBe(44); // 13 px + 18 px label + 13 px
-  // 14 px between the button and what's above it (icons, job title or email line)
+  // 16 px between the button and the contact icons above it; 14 px when a line of text (job title or email) is last
   const gapAbove = () => btn.evaluate((td) => { const t = td.closest('table')!; const p = t.previousElementSibling as HTMLElement; const last = [...p.querySelectorAll('img.hs-ic-l')].pop() ?? p; return Math.round(t.getBoundingClientRect().top - last.getBoundingClientRect().bottom); });
-  await expect.poll(gapAbove).toBe(14);
+  await expect.poll(gapAbove).toBe(16);
   await page.fill('#f-website', '');
   await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0); // preview redrawn without contact icons
   await expect.poll(gapAbove).toBe(14);

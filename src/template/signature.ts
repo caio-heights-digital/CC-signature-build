@@ -19,10 +19,9 @@ export interface SignatureData {
   title: string;
   /** Square headshot. `src` must be a hosted https URL when copying (a data: URL is fine for preview). */
   photo?: { src: string; alt?: string };
-  logo?: { src: string; width: number; height: number; alt: string };
   /**
-   * The alternative to the logo: shown at up to 128 × 128, keeping its proportions (`width` and `height`
-   * are the size shown; at least one is 128). Same place on the right; `src` is a hosted https PNG, JPG or GIF.
+   * Optional image on the right: shown at up to 128 × 128, keeping its proportions (`width` and `height`
+   * are the size shown; at least one is 128). `src` is a hosted https PNG, JPG or GIF.
    */
   image?: { src: string; width: number; height: number; alt: string };
   website?: string; // full href
@@ -39,9 +38,7 @@ export interface SignatureData {
    * Without icons the row falls back to text links.
    */
   icons?: Partial<Record<IconKey, { light: string; dark?: string }>>;
-  /** Preview only: show a grey "LOGO" box where an uploaded logo would go. Never copied. */
-  logoPlaceholder?: boolean;
-  /** Preview only: the same, a grey "IMAGE" box, while the image option is chosen but empty. Never copied. */
+  /** Preview only: a grey "IMAGE" box where an uploaded image would go. Never copied. */
   imagePlaceholder?: boolean;
 }
 
@@ -119,24 +116,15 @@ export function buildSignatureHtml(d: SignatureData): string {
       `<img src="${esc(d.photo.src)}" width="${PHOTO}" height="${PHOTO}" alt="${esc(d.photo.alt ?? d.name)}" ` +
       `style="display:block;width:${PHOTO}px;height:${PHOTO}px;border:0;outline:none;"></td>`
     : '';
-  const logo = d.logo
+  const image = d.image
     ? `<td valign="top" align="right" style="padding:0 0 0 24px;">` +
-      `<img src="${esc(d.logo.src)}" width="${d.logo.width}" height="${d.logo.height}" alt="${esc(d.logo.alt)}" ` +
-      `style="display:block;width:${d.logo.width}px;height:${d.logo.height}px;border:0;outline:none;"></td>`
-    : d.image
-      ? // Same cell as the logo, so it sits and behaves exactly like it.
-        `<td valign="top" align="right" style="padding:0 0 0 24px;">` +
-        `<img src="${esc(d.image.src)}" width="${d.image.width}" height="${d.image.height}" alt="${esc(d.image.alt)}" ` +
-        `style="display:block;width:${d.image.width}px;height:${d.image.height}px;border:0;outline:none;"></td>`
-      : d.logoPlaceholder
-        ? `<td valign="top" align="right" style="padding:0 0 0 24px;">` +
-          `<div data-placeholder="logo" style="width:158px;height:60px;background:#E1E1E1;color:#A3A3A3;${FONT}font-size:22px;` +
-          `font-weight:bold;line-height:60px;text-align:center;letter-spacing:1px;">LOGO</div></td>`
-        : d.imagePlaceholder
-          ? `<td valign="top" align="right" style="padding:0 0 0 24px;">` +
-            `<div data-placeholder="image" style="width:${IMAGE}px;height:${IMAGE}px;background:#E1E1E1;color:#A3A3A3;${FONT}font-size:22px;` +
-            `font-weight:bold;line-height:${IMAGE}px;text-align:center;letter-spacing:1px;">IMAGE</div></td>`
-          : '';
+      `<img src="${esc(d.image.src)}" width="${d.image.width}" height="${d.image.height}" alt="${esc(d.image.alt)}" ` +
+      `style="display:block;width:${d.image.width}px;height:${d.image.height}px;border:0;outline:none;"></td>`
+    : d.imagePlaceholder
+      ? `<td valign="top" align="right" style="padding:0 0 0 24px;">` +
+        `<div data-placeholder="image" style="width:${IMAGE}px;height:${IMAGE}px;background:#E1E1E1;color:#A3A3A3;${FONT}font-size:22px;` +
+        `font-weight:bold;line-height:${IMAGE}px;text-align:center;letter-spacing:1px;">IMAGE</div></td>`
+      : '';
 
   const details =
     `<td valign="top" style="padding:0;${FONT}">` +
@@ -151,7 +139,7 @@ export function buildSignatureHtml(d: SignatureData): string {
     ctaButton(d.cta) +
     `</td>`;
 
-  const top = `<table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>${photo}${details}${logo}</tr></table>`;
+  const top = `<table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>${photo}${details}${image}</tr></table>`;
 
   const quote = d.quote?.text
     ? `<tr><td style="padding:20px 0 0 0;"><table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>` +

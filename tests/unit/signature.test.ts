@@ -6,7 +6,7 @@ const full: SignatureData = {
   name: 'Anastasiia Cherevychna',
   title: 'Designer',
   photo: { src: 'https://res.cloudinary.com/x/image/upload/v1/a.jpg' },
-  logo: { src: 'https://signatures.heights.digital/clients/heights/logo.png', width: 142, height: 23, alt: 'Heights Digital' },
+  image: { src: 'https://res.cloudinary.com/x/image/upload/v1/i.png', width: 128, height: 128, alt: 'Heights Digital' },
   website: 'https://heights.digital/',
   email: 'name@heights.digital',
   phone: { display: '+351 912 345 678', href: 'tel:+351912345678' },
@@ -41,7 +41,7 @@ describe('signature HTML is email-safe', () => {
   });
   it('gives every image explicit width and height', () => {
     const imgs = html.match(/<img [^>]+>/g)!;
-    expect(imgs).toHaveLength(10); // photo, logo, 4 contact icons × light and dark
+    expect(imgs).toHaveLength(10); // photo, image, 4 contact icons × light and dark
     for (const img of imgs) expect(img).toMatch(/width="\d+" height="\d+"/);
   });
   it('includes every filled-in part', () => {
@@ -69,8 +69,7 @@ describe('signature HTML is email-safe', () => {
     expect(h).toContain('>name@heights.digital</span>');
     expect(h).toContain('>LinkedIn</span>');
   });
-  it('shows a logo placeholder only when asked (preview), never by default', () => {
-    expect(buildSignatureHtml({ name: 'J', title: 'T', logoPlaceholder: true })).toContain('data-placeholder="logo"');
+  it('never shows a placeholder by default', () => {
     expect(buildSignatureHtml({ name: 'J', title: 'T' })).not.toContain('placeholder');
   });
   it('leaves out empty parts', () => {
@@ -95,20 +94,20 @@ describe('signature HTML is email-safe', () => {
 });
 
 describe('the 128 × 128 image', () => {
-  const { logo: _logo, ...noLogo } = full;
-  const withImage = buildSignatureHtml({ ...noLogo, image: { src: 'https://res.cloudinary.com/x/image/upload/v1/i.gif', width: 128, height: 128, alt: 'Heights Digital' } });
-  const logoCell = buildSignatureHtml(full).match(/<td valign="top" align="right" style="padding:0 0 0 24px;">/)![0];
+  const { image: _image, ...noImage } = full;
+  const withImage = buildSignatureHtml({ ...noImage, image: { src: 'https://res.cloudinary.com/x/image/upload/v1/i.gif', width: 128, height: 128, alt: 'Heights Digital' } });
+  const rightCell = '<td valign="top" align="right" style="padding:0 0 0 24px;">';
 
-  it('sits in the same right-hand cell as the logo, at exactly 128 × 128', () => {
-    expect(withImage).toContain(`${logoCell}<img src="https://res.cloudinary.com/x/image/upload/v1/i.gif" width="128" height="128"`);
+  it('sits in the right-hand cell, at exactly 128 × 128', () => {
+    expect(withImage).toContain(`${rightCell}<img src="https://res.cloudinary.com/x/image/upload/v1/i.gif" width="128" height="128"`);
     expect(withImage).toContain('style="display:block;width:128px;height:128px;border:0;outline:none;"');
     expect(withImage.indexOf('align="right"')).toBeGreaterThan(withImage.indexOf('Anastasiia Cherevychna')); // right of the details
   });
   it('wraps a shorter image at its own size, not in a 128 × 128 box', () => {
-    const wide = buildSignatureHtml({ ...noLogo, image: { src: 'https://res.cloudinary.com/x/i.png', width: 128, height: 64, alt: 'X' } });
+    const wide = buildSignatureHtml({ ...noImage, image: { src: 'https://res.cloudinary.com/x/i.png', width: 128, height: 64, alt: 'X' } });
     expect(wide).toContain('width="128" height="64"');
     expect(wide).toContain('style="display:block;width:128px;height:64px;border:0;outline:none;"');
-    const tall = buildSignatureHtml({ ...noLogo, image: { src: 'https://res.cloudinary.com/x/i.png', width: 64, height: 128, alt: 'X' } });
+    const tall = buildSignatureHtml({ ...noImage, image: { src: 'https://res.cloudinary.com/x/i.png', width: 64, height: 128, alt: 'X' } });
     expect(tall).toContain('width="64" height="128"');
     expect(wide).not.toContain('height:128px;border:0'); // nothing pads it out to 128
   });

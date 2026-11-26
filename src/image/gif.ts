@@ -35,7 +35,7 @@ const yieldToBrowser = () => new Promise<void>((r) => setTimeout(r));
 /**
  * Re-draws every frame of an animated GIF at `longest` px on its longest side, keeping its proportions
  * and its timing. Frames are first rebuilt in full (GIF frames are often only the part that changed),
- * then put on white, as for the logo, so a see-through GIF doesn't turn dark in an email app's dark mode.
+ * then put on white, as for still images, so a see-through GIF doesn't turn dark in an email app's dark mode.
  */
 export async function resizeGif(buf: ArrayBuffer, longest: number, onFrame?: (done: number, total: number) => void): Promise<Blob> {
   const gif = parseGIF(buf);

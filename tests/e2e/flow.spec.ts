@@ -44,7 +44,7 @@ test('full signature: fill in, photo, copy with hosted photo', async ({ page }) 
   const preview = page.locator('#previewInner');
   await expect(preview).toContainText('Anastasiia Cherevychna');
   await expect(preview).toContainText('Book a call');
-  await expect(preview.locator('img:visible')).toHaveCount(5); // photo + 4 contact icons (logo is a placeholder until uploaded)
+  await expect(preview.locator('img:visible')).toHaveCount(5); // photo + 4 contact icons (the image is a placeholder until uploaded)
 
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
@@ -99,28 +99,11 @@ async function addPhotoExpectingError(page: Page) {
   await page.locator('#cropDialog [data-apply]').click();
 }
 
-test('locked fields are hidden, and an uploaded logo is trimmed, put on white and hosted', async ({ page }) => {
-  const uploads = await fakeCloudinary(page);
+test('locked fields are hidden, and their values come from the client file', async ({ page }) => {
+  await fakeCloudinary(page);
   await page.goto('/?client=demo-locked');
   await expect(page.locator('[data-field="website"]')).toBeHidden();
   await expect(page.locator('[data-field="ctaColour"]')).toBeHidden();
-  await page.locator('#logoField input[type=file]').setInputFiles(fx('logo.png'));
-  await expect(page.locator('#logoField .status')).toBeVisible();
-  expect(uploads).toHaveLength(1);
-  // 600×100 bar inside an 800×300 transparent canvas → trimmed, fitted to 142 wide, plus an 8 px white margin
-  const logo = page.locator('#previewInner img[alt^="Acme"]');
-  await expect(logo).toHaveAttribute('width', '158');
-  await expect(logo).toHaveAttribute('height', '40');
-  const px = await logo.evaluate(async (img: HTMLImageElement) => {
-    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
-    const x = c.getContext('2d')!; x.drawImage(img, 0, 0);
-    const at = (a: number, b: number) => [...x.getImageData(a, b, 1, 1).data];
-    return { margin: at(10, 40), corner: at(0, 0), bar: at(c.width / 2, c.height / 2), size: [c.width, c.height] };
-  });
-  expect(px.size).toEqual([316, 80]);
-  expect(px.margin).toEqual([255, 255, 255, 255]); // white margin, even where the original was transparent
-  expect(px.corner[3]).toBe(0); // rounded corner
-  expect(px.bar.slice(0, 3)).toEqual([30, 58, 138]); // the logo itself
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
   await page.check('#noHeadshot', { force: true });
@@ -129,23 +112,17 @@ test('locked fields are hidden, and an uploaded logo is trimmed, put on white an
   const html = await clipboardHtml(page);
   expect(html).toContain('acme.example'); // locked website comes from the client file
   expect(html).toContain('bgcolor="#1E3A8A"'); // locked CTA colour
-  expect(html).toContain(HOSTED); // hosted logo
 });
 
-test('the logo shows a placeholder until one is uploaded', async ({ page }) => {
-  await fakeCloudinary(page);
+test('there is no company logo option: just the Image upload, with an IMAGE placeholder until one is added', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#logoField')).toBeVisible();
-  await expect(page.locator('#previewInner [data-placeholder="logo"]')).toHaveText('LOGO');
-  await page.locator('#logoField input[type=file]').setInputFiles(fx('logo.png'));
-  await expect(page.locator('#logoField .status')).toBeVisible();
+  await expect(page.locator('#imageField')).toBeVisible();
+  await expect(page.locator('#logoField, #slotField, [data-slot-btn]')).toHaveCount(0);
+  await expect(page.getByText(/company logo/i)).toHaveCount(0);
   await expect(page.locator('#previewInner [data-placeholder="logo"]')).toHaveCount(0);
-  await expect(page.locator('#previewInner img[alt="Heights Digital"]')).toHaveAttribute('src', /^data:image\/png/);
-  await page.locator('#logoField [data-remove]').click();
-  await expect(page.locator('#previewInner [data-placeholder="logo"]')).toBeVisible();
+  await expect(page.locator('#previewInner [data-placeholder="image"]')).toHaveText('IMAGE');
 });
 
-const chooseImage = (page: Page) => page.click('[data-slot-btn="image"]');
 const pixels = (loc: ReturnType<Page['locator']>, points: [number, number][]) =>
   loc.evaluate((img: HTMLImageElement, pts: [number, number][]) => {
     const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
@@ -153,19 +130,10 @@ const pixels = (loc: ReturnType<Page['locator']>, points: [number, number][]) =>
     return { size: [c.width, c.height], at: pts.map(([a, b]) => [...x.getImageData(a, b, 1, 1).data]) };
   }, points);
 
-test('image option: choose it instead of the logo, upload a square image, and it goes in at 128 × 128 on white', async ({ page }) => {
+test('image option: upload a square image, and it goes in at 128 × 128 on white', async ({ page }) => {
   const uploads = await fakeCloudinary(page);
   await page.goto('/');
-  // Logo is the default; the image box is tucked away
-  await expect(page.locator('#logoField')).toBeVisible();
-  await expect(page.locator('#imageField')).toBeHidden();
-  await expect(page.locator('[data-slot-btn="logo"]')).toHaveAttribute('aria-pressed', 'true');
-  await chooseImage(page);
-  await expect(page.locator('#logoField')).toBeHidden();
-  await expect(page.locator('#imageField')).toBeVisible();
-  await expect(page.locator('[data-slot-btn="image"]')).toHaveAttribute('aria-pressed', 'true');
-  // grey placeholder in the same spot, 128 × 128, instead of the LOGO one
-  await expect(page.locator('#previewInner [data-placeholder="logo"]')).toHaveCount(0);
+  // grey placeholder on the right, 128 × 128, until an image is added
   const ph = page.locator('#previewInner [data-placeholder="image"]');
   await expect(ph).toHaveText('IMAGE');
   expect((await ph.boundingBox())!.width).toBe(128);
@@ -194,12 +162,6 @@ test('image option: choose it instead of the logo, upload a square image, and it
   expect(html).not.toContain('data:image');
   expect(html).not.toContain('data-placeholder');
 
-  // Switching back to the logo drops the image from the signature (but keeps it if they switch again)
-  await page.click('[data-slot-btn="logo"]');
-  await expect(page.locator('#previewInner img[width="128"]')).toHaveCount(0);
-  await expect(page.locator('#previewInner [data-placeholder="logo"]')).toBeVisible();
-  await page.click('[data-slot-btn="image"]');
-  await expect(page.locator('#previewInner img[width="128"]')).toHaveCount(1);
   await page.locator('#imageField [data-remove]').click();
   await expect(page.locator('#previewInner [data-placeholder="image"]')).toBeVisible();
 });
@@ -207,7 +169,6 @@ test('image option: choose it instead of the logo, upload a square image, and it
 test('image option: a wider image keeps its shape and the signature wraps tightly around it (no white bars)', async ({ page }) => {
   await fakeCloudinary(page);
   await page.goto('/');
-  await chooseImage(page);
   await page.locator('#imageField input[type=file]').setInputFiles(fx('image-wide.png')); // 400 × 200
   await expect(page.locator('#imageField .status')).toBeVisible();
   const img = page.locator('#previewInner img[width="128"]');
@@ -226,7 +187,6 @@ test('image option: an image shorter than 128 px tall is shown at its own height
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
   await page.check('#noHeadshot', { force: true });
-  await chooseImage(page);
   await page.locator('#imageField input[type=file]').setInputFiles(fx('image-short.png')); // 300 × 90
   await expect(page.locator('#imageField .error')).toBeHidden(); // no more "too small" for a short image
   await expect(page.locator('#imageField .status')).toBeVisible();
@@ -234,12 +194,12 @@ test('image option: an image shorter than 128 px tall is shown at its own height
   await expect(img).toHaveAttribute('height', '38');
   const box = (await img.boundingBox())!;
   expect([box.width, box.height]).toEqual([128, 38]); // exactly the picture: no 128 × 128 box with blank space under it
-  // it stays on the right and level with the top, like the logo, however short it is
+  // it stays on the right and level with the top, however short it is
   const where = await img.evaluate((i) => {
     const t = (document.querySelector('#previewInner > table') as HTMLElement).getBoundingClientRect(), r = i.getBoundingClientRect();
     return { fromRight: Math.round(t.right - r.right), fromTop: Math.round(r.top - t.top) };
   });
-  expect(where).toEqual({ fromRight: 0, fromTop: 0 }); // flush top-right, where the logo sits
+  expect(where).toEqual({ fromRight: 0, fromTop: 0 }); // flush top-right
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   const html = await clipboardHtml(page);
@@ -263,7 +223,6 @@ test('image option: a GIF is accepted, kept animated, and uploaded exactly as it
     };
   });
   await page.goto('/');
-  await chooseImage(page);
   await page.locator('#imageField input[type=file]').setInputFiles(fx('anim-square.gif'));
   await expect(page.locator('#imageField .status')).toBeVisible();
   const sent = await page.evaluate(() => (window as any).__sent as { name: string; type: string; b64: string }[]);
@@ -331,7 +290,6 @@ test('image option: a GIF that isn’t square is shrunk proportionately to fit 1
   await fakeCloudinary(page);
   await captureUploads(page);
   await page.goto('/');
-  await chooseImage(page);
   const fs = await import('node:fs');
 
   // 600 × 100 (6 : 1) was refused before; now it's shrunk to 256 × 43 (shown at 128 × 21) with all its frames and timings
@@ -389,7 +347,6 @@ test('image option: a big GIF is shrunk to a light file; one that’s still too 
   const uploads = await fakeCloudinary(page);
   await captureUploads(page);
   await page.goto('/');
-  await chooseImage(page);
   const input = page.locator('#imageField input[type=file]');
 
   // 800 × 500, over 2 MB: used to be refused as too heavy, now shrunk to 256 × 160 and well under 1 MB
@@ -417,10 +374,7 @@ test('image option: a big GIF is shrunk to a light file; one that’s still too 
   await expect(page.locator('#imageField .error')).toContainText('very wide');
   expect(uploads).toHaveLength(1);
 
-  // the logo and the headshot still refuse GIFs
-  await page.click('[data-slot-btn="logo"]');
-  await page.locator('#logoField input[type=file]').setInputFiles(fx('anim-square.gif'));
-  await expect(page.locator('#logoField .error')).toContainText('GIF, which doesn’t work well in a signature');
+  // the headshot still refuses GIFs
   await page.locator('#headshotField input[type=file]').setInputFiles(fx('anim-square.gif'));
   await expect(page.locator('#headshotField .error')).toContainText('GIF, which doesn’t work well in a signature');
   expect(uploads).toHaveLength(1);
@@ -429,13 +383,12 @@ test('image option: a big GIF is shrunk to a light file; one that’s still too 
 test('image option: a still image smaller than 128 px is still refused as blurry', async ({ page }) => {
   const uploads = await fakeCloudinary(page);
   await page.goto('/');
-  await chooseImage(page);
   await page.locator('#imageField input[type=file]').setInputFiles(fx('image-small.png')); // 100 × 100
   await expect(page.locator('#imageField .error')).toContainText('blurry');
   expect(uploads).toHaveLength(0);
 });
 
-test('image option: sits on the right exactly like the logo, on desktop and on phones', async ({ page }) => {
+test('image option: sits flush top-right, on desktop and on phones', async ({ page }) => {
   await fakeCloudinary(page);
   const gap = () => page.evaluate(() => {
     const table = document.querySelector('#previewInner > table') as HTMLElement;
@@ -449,17 +402,12 @@ test('image option: sits on the right exactly like the logo, on desktop and on p
     await page.fill('#f-name', 'Anastasiia Cherevychna');
     await page.fill('#f-title', 'Designer');
     await page.check('#noHeadshot', { force: true });
-    await page.locator('#logoField input[type=file]').setInputFiles(fx('logo.png'));
-    await expect(page.locator('#logoField .status')).toBeVisible();
-    await expect(page.locator('#previewInner img[alt="Heights Digital"]')).toHaveCount(1); // the preview redraws a frame after the upload finishes
-    const logo = await gap();
-    await chooseImage(page);
-    await page.locator('#imageField input[type=file]').setInputFiles(fx('image-square.png'));
+      await page.locator('#imageField input[type=file]').setInputFiles(fx('image-square.png'));
     await expect(page.locator('#imageField .status')).toBeVisible();
     await expect(page.locator('#previewInner img[width="128"]')).toHaveCount(1);
     const image = await gap();
-    expect(image.fromRight, `right edge at ${width} px`).toBe(logo.fromRight);
-    expect(image.fromTop, `top edge at ${width} px`).toBe(logo.fromTop);
+    expect(image.fromRight, `right edge at ${width} px`).toBe(0);
+    expect(image.fromTop, `top edge at ${width} px`).toBe(0);
     expect([image.w, image.h]).toEqual([128, 128]);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `sideways scroll at ${width} px`).toBeLessThanOrEqual(0);

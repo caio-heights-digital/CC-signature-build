@@ -28,14 +28,14 @@ describe('signature HTML is email-safe', () => {
   it('uses no SVG, data URLs, rgba or opacity, and only the one dark-mode style block', () => {
     expect(html).not.toMatch(/<svg|data:|rgba\(|opacity/i);
     expect(html.match(/<style/g)).toHaveLength(1);
-    expect([...html.matchAll(/class="([^"]+)"/g)].map((m) => m[1]).every((c) => ['hs-ic-l', 'hs-ic-d', 'hs-cta', 'hs-cta-t'].includes(c))).toBe(true);
+    expect([...html.matchAll(/class="([^"]+)"/g)].map((m) => m[1]).every((c) => ['hs-ic-l', 'hs-ic-d', 'hs-cta', 'hs-cta-t', 'hs-sub'].includes(c))).toBe(true);
   });
   it('hides the white icons unless the app is in dark mode (so Gmail, which strips the style, shows the outlined ones)', () => {
     const dark = html.match(/<img class="hs-ic-d"[^>]+>/g)!;
     expect(dark).toHaveLength(4); // 3 contact icons + the CTA chip
     for (const i of dark) expect(i).toMatch(/display:none;max-height:0;overflow:hidden;mso-hide:all;/);
     expect(html).toContain('@media (prefers-color-scheme:dark){.hs-ic-l{display:none!important}');
-    expect(buildSignatureHtml({ name: 'J', title: 'T' })).not.toContain('<style');
+    expect(buildSignatureHtml({ name: 'J', title: '' })).not.toContain('<style'); // nothing for dark mode to change
   });
   it('gives every image explicit width and height', () => {
     const imgs = html.match(/<img [^>]+>/g)!;
@@ -98,7 +98,7 @@ describe('signature HTML is email-safe', () => {
     expect(html).toContain('[data-ogsb] .hs-cta{background-color:#FAF8F7!important}[data-ogsc] .hs-cta-t{color:#262626!important}');
     // only one style block, and none at all when there's nothing for dark mode to change
     expect(html.match(/<style/g)).toHaveLength(1);
-    expect(buildSignatureHtml({ name: 'J', title: 'T' })).not.toContain('<style');
+    expect(buildSignatureHtml({ name: 'J', title: '' })).not.toContain('<style'); // nothing for dark mode to change
   });
   it('keeps the button without the arrow chip when the chip image isn’t available', () => {
     const h = buildSignatureHtml({ ...full, cta: { text: 'Book a call', href: 'https://calendly.com/x' } });
@@ -140,7 +140,7 @@ describe('the 128 × 128 image', () => {
 
 describe('the email address line under the job title', () => {
   const withLine = buildSignatureHtml({ ...full, emailLine: 'anastasiia@heights.digital' });
-  const titleDiv = withLine.match(/<div style="([^"]+)">Designer<\/div>/)![1];
+  const titleDiv = withLine.match(/<div class="hs-sub" style="([^"]+)">Designer<\/div>/)![1];
 
   it('comes straight after the job title, and before the icons', () => {
     const i = (t: string) => withLine.indexOf(t);
@@ -148,10 +148,15 @@ describe('the email address line under the job title', () => {
     expect(i('anastasiia@heights.digital')).toBeLessThan(i('<img class="hs-ic-l"'));
   });
   it('has exactly the same style as the job title: font, size, line height and colour', () => {
-    const line = withLine.match(/<div style="([^"]+)"><a href="mailto:anastasiia@heights.digital"/)![1];
+    const line = withLine.match(/<div class="hs-sub" style="([^"]+)"><a class="hs-sub" href="mailto:anastasiia@heights.digital"/)![1];
     expect(line).toBe(titleDiv);
-    const link = withLine.match(/<a href="mailto:anastasiia@heights.digital" style="([^"]+)"/)![1];
+    const link = withLine.match(/<a class="hs-sub" href="mailto:anastasiia@heights.digital" style="([^"]+)"/)![1];
     expect(link).toBe(`${titleDiv}text-decoration:none;`); // a link, so email apps don’t colour or underline it themselves
+  });
+  it('is #8D8D8B like the job title, and #FDFDFC in dark mode', () => {
+    expect(titleDiv).toContain('color:#8D8D8B;');
+    expect(withLine).toContain('.hs-sub{color:#FDFDFC!important}');
+    expect(withLine).toContain('[data-ogsc] .hs-sub{color:#FDFDFC!important}');
   });
   it('is left out when empty, and escaped when not', () => {
     expect(buildSignatureHtml({ ...full, emailLine: undefined })).not.toContain('mailto:');

@@ -494,7 +494,7 @@ test('email field: refuses anything that isn’t a proper address, and says why'
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   const html = await clipboardHtml(page);
-  expect(html).toMatch(/>CTO<\/div><div style="[^"]*"><a href="mailto:jane@company\.com"[^>]*>jane@company\.com<\/a><\/div>/);
+  expect(html).toMatch(/>CTO<\/div><div [^>]*><a [^>]*href="mailto:jane@company\.com"[^>]*>jane@company\.com<\/a><\/div>/);
   expect(html).not.toContain('icons/email');
   expect(uploads).toHaveLength(0);
 });
@@ -623,12 +623,18 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   await page.click('[data-theme-btn="dark"]');
   expect(await inversions(btn)).toBe(0);
   expect(await inversions(btn.locator('img.hs-ic-d'))).toBe(0);
-  expect(await inversions(page.locator('#previewInner div', { hasText: /^Job title$/ }).last())).toBe(1); // the rest is still inverted
+  expect(await inversions(page.locator('#previewInner div', { hasText: /^Full Name$/ }).last())).toBe(1); // the rest is still inverted
   // ...and shows the Figma dark button: light background, dark label, light chip
   expect(await btn.evaluate((td) => getComputedStyle(td).backgroundColor)).toBe('rgb(250, 248, 247)');
   expect(await btn.locator('.hs-cta-t').evaluate((t) => getComputedStyle(t).color)).toBe('rgb(38, 38, 38)');
   await expect(btn.locator('img.hs-ic-d[src$="icons/cta-arrow-dark.png"]')).toBeVisible();
   await expect(btn.locator('img.hs-ic-l')).toBeHidden();
+  // job title (and email line) are #FDFDFC in the dark preview, #8D8D8B in light
+  const title = page.locator('#previewInner div', { hasText: /^Job title$/ }).last();
+  expect(await title.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(253, 253, 252)');
+  expect(await inversions(title)).toBe(0);
+  await page.click('[data-theme-btn="light"]');
+  expect(await title.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(141, 141, 139)');
   await page.locator('#preview').screenshot({ path: 'test-results/cta-dark.png' });
 });
 

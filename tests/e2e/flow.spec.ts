@@ -623,7 +623,7 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   await page.click('[data-theme-btn="dark"]');
   expect(await inversions(btn)).toBe(0);
   expect(await inversions(btn.locator('img.hs-ic-d'))).toBe(0);
-  expect(await inversions(page.locator('#previewInner div', { hasText: /^Full Name$/ }).last())).toBe(1); // the rest is still inverted
+  expect(await inversions(page.locator('#previewInner [data-placeholder="image"]'))).toBe(1); // the rest (here the image placeholder) is still inverted
   // ...and shows the Figma dark button: light background, dark label, light chip
   expect(await btn.evaluate((td) => getComputedStyle(td).backgroundColor)).toBe('rgb(250, 248, 247)');
   expect(await btn.locator('.hs-cta-t').evaluate((t) => getComputedStyle(t).color)).toBe('rgb(38, 38, 38)');
@@ -632,9 +632,13 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   // job title (and email line) are #FDFDFC in the dark preview, #8D8D8B in light
   const title = page.locator('#previewInner div', { hasText: /^Job title$/ }).last();
   expect(await title.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(253, 253, 252)');
+  const nameLine = page.locator('#previewInner div.hs-name');
+  expect(await nameLine.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(255, 255, 255)'); // the name, #FFFFFF
+  expect(await inversions(nameLine)).toBe(0);
   expect(await inversions(title)).toBe(0);
   await page.click('[data-theme-btn="light"]');
   expect(await title.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(141, 141, 139)');
+  expect(await nameLine.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(52, 51, 61)'); // unchanged in light mode
   await page.locator('#preview').screenshot({ path: 'test-results/cta-dark.png' });
 });
 

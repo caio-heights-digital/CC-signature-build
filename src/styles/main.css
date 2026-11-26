@@ -128,6 +128,8 @@ button, input { font: inherit; color: inherit; }
 /* Job title and email line: #FDFDFC in dark mode, as in apps that support dark-mode code (flipped back, then coloured). */
 .preview[data-theme="dark"] .preview-inner div.hs-sub { filter: invert(1) hue-rotate(180deg); color: #FDFDFC !important; }
 .preview[data-theme="dark"] .preview-inner a.hs-sub { color: #FDFDFC !important; }
+/* The name: #FFFFFF in dark mode. */
+.preview[data-theme="dark"] .preview-inner div.hs-name { filter: invert(1) hue-rotate(180deg); color: #FFFFFF !important; }
 .preview-inner { width: fit-content; min-width: 100%; }
 /* Apps that support dark-mode code show the solid white icons; the preview shows that best case. */
 .preview[data-theme="dark"] .hs-ic-l { display: none !important; }

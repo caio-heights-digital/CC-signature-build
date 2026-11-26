@@ -28,14 +28,14 @@ describe('signature HTML is email-safe', () => {
   it('uses no SVG, data URLs, rgba or opacity, and only the one dark-mode style block', () => {
     expect(html).not.toMatch(/<svg|data:|rgba\(|opacity/i);
     expect(html.match(/<style/g)).toHaveLength(1);
-    expect([...html.matchAll(/class="([^"]+)"/g)].map((m) => m[1]).every((c) => ['hs-ic-l', 'hs-ic-d', 'hs-cta', 'hs-cta-t', 'hs-sub'].includes(c))).toBe(true);
+    expect([...html.matchAll(/class="([^"]+)"/g)].map((m) => m[1]).every((c) => ['hs-ic-l', 'hs-ic-d', 'hs-cta', 'hs-cta-t', 'hs-sub', 'hs-name'].includes(c))).toBe(true);
   });
   it('hides the white icons unless the app is in dark mode (so Gmail, which strips the style, shows the outlined ones)', () => {
     const dark = html.match(/<img class="hs-ic-d"[^>]+>/g)!;
     expect(dark).toHaveLength(4); // 3 contact icons + the CTA chip
     for (const i of dark) expect(i).toMatch(/display:none;max-height:0;overflow:hidden;mso-hide:all;/);
     expect(html).toContain('@media (prefers-color-scheme:dark){.hs-ic-l{display:none!important}');
-    expect(buildSignatureHtml({ name: 'J', title: '' })).not.toContain('<style'); // nothing for dark mode to change
+    expect(buildSignatureHtml({ name: 'J', title: '' })).toContain('.hs-name{color:#FFFFFF!important}'); // even a name alone has something for dark mode
   });
   it('gives every image explicit width and height', () => {
     const imgs = html.match(/<img [^>]+>/g)!;
@@ -98,7 +98,7 @@ describe('signature HTML is email-safe', () => {
     expect(html).toContain('[data-ogsb] .hs-cta{background-color:#FAF8F7!important}[data-ogsc] .hs-cta-t{color:#262626!important}');
     // only one style block, and none at all when there's nothing for dark mode to change
     expect(html.match(/<style/g)).toHaveLength(1);
-    expect(buildSignatureHtml({ name: 'J', title: '' })).not.toContain('<style'); // nothing for dark mode to change
+    expect(buildSignatureHtml({ name: 'J', title: '' })).toContain('.hs-name{color:#FFFFFF!important}'); // even a name alone has something for dark mode
   });
   it('keeps the button without the arrow chip when the chip image isn’t available', () => {
     const h = buildSignatureHtml({ ...full, cta: { text: 'Book a call', href: 'https://calendly.com/x' } });
@@ -157,6 +157,11 @@ describe('the email address line under the job title', () => {
     expect(titleDiv).toContain('color:#8D8D8B;');
     expect(withLine).toContain('.hs-sub{color:#FDFDFC!important}');
     expect(withLine).toContain('[data-ogsc] .hs-sub{color:#FDFDFC!important}');
+  });
+  it('the name stays #34333D, and is #FFFFFF in dark mode', () => {
+    expect(withLine).toMatch(/<div class="hs-name" style="[^"]*color:#34333D;">Anastasiia Cherevychna<\/div>/);
+    expect(withLine).toContain('.hs-name{color:#FFFFFF!important}');
+    expect(withLine).toContain('[data-ogsc] .hs-name{color:#FFFFFF!important}');
   });
   it('is left out when empty, and escaped when not', () => {
     expect(buildSignatureHtml({ ...full, emailLine: undefined })).not.toContain('mailto:');

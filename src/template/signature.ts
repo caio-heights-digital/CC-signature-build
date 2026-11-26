@@ -3,7 +3,7 @@
  *
  * This is the fragile part of the product: it has to survive Gmail, Outlook (web, new and classic desktop),
  * Apple Mail and phones. Rules it follows, and that any change must keep:
- *   - tables for layout, every style inline, no classes except the dark-mode swap below (icons, CTA button, title/email;
+ *   - tables for layout, every style inline, no classes except the dark-mode swap below (icons, CTA button, name/title/email;
  *     one tiny <style> block; apps that strip it, like Gmail, simply keep the light-mode look)
  *   - web-safe fonts only (Arial / Helvetica)
  *   - images are hosted https PNG/JPG with explicit width + height, never SVG or data: URLs
@@ -53,6 +53,7 @@ export const COLOURS = {
   name: '#34333D', // Black #01000C at 80%
   title: '#8D8D8B', // job title and email line (26 Nov 2026); #FDFDFC in dark mode, see titleDark
   titleDark: '#FDFDFC',
+  nameDark: '#FFFFFF', // the name in dark mode (26 Nov 2026)
   meta: '#5C5753', // Charcoal at 80%
   separator: '#CCCAC9', // Light Grey
   link: '#332D28',
@@ -126,15 +127,15 @@ function ctaButton(cta: SignatureData['cta']): string {
 
 /**
  * Dark mode (Apple Mail, iPhone Mail, Outlook.com and the Outlook apps): swaps to the white contact icons and gives
- * the CTA button the Figma dark colours, and lightens the job title and email line. Outlook marks dark mode with [data-ogsc] (text) and [data-ogsb] (backgrounds).
+ * the CTA button the Figma dark colours, and lightens the name, job title and email line. Outlook marks dark mode with [data-ogsc] (text) and [data-ogsb] (backgrounds).
  */
 const DARK_RULES =
   '.hs-ic-l{display:none!important}.hs-ic-d{display:block!important;max-height:none!important}' +
-  `.hs-cta{background-color:${CTA.darkBg}!important}.hs-cta-t{color:${CTA.darkText}!important}.hs-sub{color:${COLOURS.titleDark}!important}`;
+  `.hs-cta{background-color:${CTA.darkBg}!important}.hs-cta-t{color:${CTA.darkText}!important}.hs-sub{color:${COLOURS.titleDark}!important}.hs-name{color:${COLOURS.nameDark}!important}`;
 const DARK_STYLE =
   `<style>@media (prefers-color-scheme:dark){${DARK_RULES}}` +
   '[data-ogsc] .hs-ic-l{display:none!important}[data-ogsc] .hs-ic-d{display:block!important;max-height:none!important}' +
-  `[data-ogsb] .hs-cta{background-color:${CTA.darkBg}!important}[data-ogsc] .hs-cta-t{color:${CTA.darkText}!important}[data-ogsc] .hs-sub{color:${COLOURS.titleDark}!important}</style>`;
+  `[data-ogsb] .hs-cta{background-color:${CTA.darkBg}!important}[data-ogsc] .hs-cta-t{color:${CTA.darkText}!important}[data-ogsc] .hs-sub{color:${COLOURS.titleDark}!important}[data-ogsc] .hs-name{color:${COLOURS.nameDark}!important}</style>`;
 
 export function buildSignatureHtml(d: SignatureData): string {
   const name = esc(d.name);
@@ -150,7 +151,7 @@ export function buildSignatureHtml(d: SignatureData): string {
 
   const details =
     `<td valign="top" style="padding:0;${FONT}">` +
-    `<div style="${FONT}font-size:24px;line-height:35px;color:${COLOURS.name};">${name}</div>` +
+    `<div class="hs-name" style="${FONT}font-size:24px;line-height:35px;color:${COLOURS.name};">${name}</div>` +
     (d.title ? `<div class="hs-sub" style="${FONT}font-size:18px;line-height:26px;color:${COLOURS.title};">${esc(d.title)}</div>` : '') +
     // Same style as the job title. It's a link so email apps don't turn it blue and underlined on their own.
     (d.emailLine
@@ -174,7 +175,7 @@ export function buildSignatureHtml(d: SignatureData): string {
       `</td></tr>`
     : '';
 
-  const usesDarkIcons = /hs-ic-d|hs-cta|hs-sub/.test(top); // only when there's something for dark mode to change
+  const usesDarkIcons = /hs-ic-d|hs-cta|hs-sub|hs-name/.test(top); // only when there's something for dark mode to change
   return (
     (usesDarkIcons ? DARK_STYLE : '') +
     `<table ${TABLE} width="100%" style="border-collapse:collapse;width:100%;max-width:652px;${FONT}">` +

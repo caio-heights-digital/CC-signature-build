@@ -614,9 +614,9 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   await expect(btn).toHaveText('Book a demo');
   const box = (await btn.boundingBox())!;
   expect(box.height).toBe(44); // 13 px + 18 px label + 13 px
-  // 14 px between the button and what's above it (icons, job title or email line)
+  // 16 px between the button and the contact icons above it; 14 px when a line of text (job title or email) is last
   const gapAbove = () => btn.evaluate((td) => { const t = td.closest('table')!; const p = t.previousElementSibling as HTMLElement; const last = [...p.querySelectorAll('img.hs-ic-l')].pop() ?? p; return Math.round(t.getBoundingClientRect().top - last.getBoundingClientRect().bottom); });
-  await expect.poll(gapAbove).toBe(14);
+  await expect.poll(gapAbove).toBe(16);
   await page.fill('#f-website', '');
   await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0); // preview redrawn without contact icons
   await expect.poll(gapAbove).toBe(14);

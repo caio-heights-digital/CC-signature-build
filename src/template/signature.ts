@@ -95,7 +95,8 @@ function contactRow(d: SignatureData): string {
 // #D9DBDC chip; padding and type stay the same.
 export const CTA = { bg: '#262626', text: '#FDFDFC', radius: 6, chip: 22, darkBg: '#FAF8F7', darkText: '#262626' };
 
-function ctaButton(cta: SignatureData['cta']): string {
+/** `gap`: space above the button: 16 px below the contact icons, 14 px below a line of text (job title or email). */
+function ctaButton(cta: SignatureData['cta'], gap: number): string {
   if (!cta) return '';
   const link = (inner: string, style: string, cls = '') =>
     cta.href ? `<a${cls} href="${esc(cta.href)}" style="${style}">${inner}</a>` : `<span${cls} style="${style}">${inner}</span>`;
@@ -115,7 +116,7 @@ function ctaButton(cta: SignatureData['cta']): string {
       `</td>`
     : '';
   return (
-    `<table ${TABLE} style="border-collapse:separate;margin-top:14px;"><tr>` + // 14 px below the name, title, email and icons
+    `<table ${TABLE} style="border-collapse:separate;margin-top:${gap}px;"><tr>` +
     `<td class="hs-cta" bgcolor="${CTA.bg}" style="background-color:${CTA.bg};border-radius:${CTA.radius}px;padding:0;">` +
     `<table ${TABLE} style="border-collapse:collapse;"><tr>${label}${chip}</tr></table>` +
     `</td></tr></table>`
@@ -156,7 +157,7 @@ export function buildSignatureHtml(d: SignatureData): string {
         `<a class="hs-sub" href="mailto:${esc(d.emailLine)}" style="${FONT}font-size:18px;line-height:26px;color:${COLOURS.title};text-decoration:none;">${esc(d.emailLine)}</a></div>`
       : '') +
     contactRow(d) +
-    ctaButton(d.cta) +
+    ctaButton(d.cta, contactRow(d) ? 16 : 14) +
     `</td>`;
 
   const top = `<table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>${details}${image}</tr></table>`;

@@ -97,6 +97,11 @@ describe('signature HTML is email-safe', () => {
     expect(html.match(/<style/g)).toHaveLength(1);
     expect(buildSignatureHtml({ name: 'J', title: '' })).toContain('.hs-name{color:#FFFFFF!important}'); // even a name alone has something for dark mode
   });
+  it('sits 16 px below the contact icons, and 14 px below a line of text when there are no icons', () => {
+    expect(html).toContain('<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:separate;margin-top:16px;"><tr><td class="hs-cta"');
+    const noIcons = buildSignatureHtml({ name: 'J', title: 'T', cta: full.cta });
+    expect(noIcons).toContain('style="border-collapse:separate;margin-top:14px;"><tr><td class="hs-cta"');
+  });
   it('keeps the button without the arrow chip when the chip image isn’t available', () => {
     const h = buildSignatureHtml({ ...full, cta: { text: 'Book a call', href: 'https://calendly.com/x' } });
     expect(h).toContain('padding:13px 16px 13px 16px;');

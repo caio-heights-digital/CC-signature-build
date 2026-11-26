@@ -108,7 +108,7 @@ function ctaButton(cta: SignatureData['cta']): string {
       `</td>`
     : '';
   return (
-    `<table ${TABLE} style="border-collapse:separate;margin-top:12px;"><tr>` +
+    `<table ${TABLE} style="border-collapse:separate;margin-top:14px;"><tr>` + // 14 px below the name, title, email and icons
     `<td bgcolor="${CTA.bg}" style="background-color:${CTA.bg};border-radius:${CTA.radius}px;padding:0;">` +
     `<table ${TABLE} style="border-collapse:collapse;"><tr>${label}${chip}</tr></table>` +
     `</td></tr></table>`

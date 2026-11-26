@@ -615,6 +615,16 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   await page.fill('#f-ctaText', '');
   await expect(btn).toHaveText('Book a demo'); // still shown while the field is empty
   await page.locator('#preview').screenshot({ path: 'test-results/cta.png' });
+  // stays dark in the dark preview too. The dark preview inverts the signature; the button (and its chip) is
+  // inverted back, so an even number of inverting filters above it means it shows its real colours.
+  const inversions = (loc: ReturnType<Page['locator']>) =>
+    loc.evaluate((start) => { let n = 0; for (let el: Element | null = start; el; el = el.parentElement) if (getComputedStyle(el).filter !== 'none') n++; return n % 2; });
+  expect(await inversions(btn)).toBe(0);
+  await page.click('[data-theme-btn="dark"]');
+  expect(await inversions(btn)).toBe(0);
+  expect(await inversions(btn.locator('img'))).toBe(0);
+  expect(await inversions(page.locator('#previewInner div', { hasText: /^Job title$/ }).last())).toBe(1); // the rest is still inverted
+  await page.locator('#preview').screenshot({ path: 'test-results/cta-dark.png' });
 });
 
 test('serves the new icons, and still serves every original icon that earlier signatures point at', async ({ request }) => {

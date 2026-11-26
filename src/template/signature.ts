@@ -17,15 +17,12 @@ import { displayUrl, escapeHtml as esc, normaliseHex, textOn } from './format';
 export interface SignatureData {
   name: string;
   title: string;
-  /** Square headshot. `src` must be a hosted https URL when copying (a data: URL is fine for preview). */
-  photo?: { src: string; alt?: string };
   /**
    * Optional image on the right: shown at up to 128 × 128, keeping its proportions (`width` and `height`
    * are the size shown; at least one is 128). `src` is a hosted https PNG, JPG or GIF.
    */
   image?: { src: string; width: number; height: number; alt: string };
   website?: string; // full href
-  email?: string;
   /** The address shown as a line of text under the job title, in the same style as the job title. */
   emailLine?: string;
   phone?: { display: string; href: string };
@@ -42,7 +39,7 @@ export interface SignatureData {
   imagePlaceholder?: boolean;
 }
 
-export type IconKey = 'email' | 'website' | 'phone' | 'linkedin';
+export type IconKey = 'website' | 'phone' | 'linkedin';
 const ICON = 28;
 const ICON_GAP = 10;
 
@@ -56,20 +53,18 @@ export const COLOURS = {
 };
 
 const FONT = 'font-family:Arial,Helvetica,sans-serif;';
-const PHOTO = 105;
 export const IMAGE = 128;
 const TABLE = 'cellpadding="0" cellspacing="0" border="0" role="presentation"';
 
 /**
- * Email, website, phone and LinkedIn as a row of icons. Each icon is a link (mailto:, the site,
- * tel:, the profile), and only filled-in fields get one. If icons aren't available, the same row
+ * Website, phone and LinkedIn as a row of icons. Each icon is a link (the site, tel:, the profile),
+ * and only filled-in fields get one. (The email address is written out under the job title instead.) If icons aren't available, the same row
  * is shown as text links instead. Alt and title text carry the address, so it's still readable
  * when an email app blocks images.
  */
 function contactRow(d: SignatureData): string {
   const icons = d.icons ?? {};
   const items: { key: IconKey; href: string; label: string }[] = [];
-  if (d.email) items.push({ key: 'email', href: `mailto:${d.email}`, label: d.email });
   if (d.website) items.push({ key: 'website', href: d.website, label: displayUrl(d.website) });
   if (d.phone) items.push({ key: 'phone', href: d.phone.href, label: d.phone.display });
   if (d.linkedin) items.push({ key: 'linkedin', href: d.linkedin, label: 'LinkedIn' });
@@ -111,11 +106,6 @@ const DARK_STYLE =
 
 export function buildSignatureHtml(d: SignatureData): string {
   const name = esc(d.name);
-  const photo = d.photo
-    ? `<td valign="top" width="${PHOTO}" style="padding:0 20px 0 0;width:${PHOTO}px;">` +
-      `<img src="${esc(d.photo.src)}" width="${PHOTO}" height="${PHOTO}" alt="${esc(d.photo.alt ?? d.name)}" ` +
-      `style="display:block;width:${PHOTO}px;height:${PHOTO}px;border:0;outline:none;"></td>`
-    : '';
   const image = d.image
     ? `<td valign="top" align="right" style="padding:0 0 0 24px;">` +
       `<img src="${esc(d.image.src)}" width="${d.image.width}" height="${d.image.height}" alt="${esc(d.image.alt)}" ` +
@@ -139,7 +129,7 @@ export function buildSignatureHtml(d: SignatureData): string {
     ctaButton(d.cta) +
     `</td>`;
 
-  const top = `<table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>${photo}${details}${image}</tr></table>`;
+  const top = `<table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>${details}${image}</tr></table>`;
 
   const quote = d.quote?.text
     ? `<tr><td style="padding:20px 0 0 0;"><table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>` +
@@ -164,7 +154,7 @@ export function buildSignatureHtml(d: SignatureData): string {
 export function buildSignatureText(d: SignatureData): string {
   const lines = [d.name, d.title];
   if (d.emailLine) lines.push(d.emailLine);
-  const contact = [d.website && displayUrl(d.website), d.email, d.phone?.display, d.linkedin].filter(Boolean);
+  const contact = [d.website && displayUrl(d.website), d.phone?.display, d.linkedin].filter(Boolean);
   if (contact.length) lines.push(contact.join(' | '));
   if (d.cta) lines.push(`${d.cta.text}: ${d.cta.href}`);
   if (d.quote?.text) lines.push('', `“${d.quote.text}”${d.quote.author ? ` –${d.quote.author}` : ''}`);

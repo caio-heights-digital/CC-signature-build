@@ -47,23 +47,6 @@ export async function loadImageFile(file: File, opts: { gif?: boolean } = {}): P
   });
 }
 
-export const HEADSHOT_PX = 400; // 105 px displayed, ~4× for sharp screens and future layouts
-
-/**
- * Draws the cropped square onto a fresh canvas. Re-encoding drops all metadata
- * (including GPS location) and fixes phone orientation.
- */
-export function renderHeadshot(img: HTMLImageElement, sx: number, sy: number, side: number): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = c.height = HEADSHOT_PX;
-  const ctx = c.getContext('2d')!;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, HEADSHOT_PX, HEADSHOT_PX);
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(img, sx, sy, side, side, 0, 0, HEADSHOT_PX, HEADSHOT_PX);
-  return c;
-}
-
 /**
  * Draws a still image at the size it will be shown (see imageDisplaySize), at up to 2× for sharp screens
  * (never bigger than the original). It's exactly the image, so the signature wraps tightly around it: no
@@ -82,9 +65,6 @@ export function renderImage(img: HTMLImageElement, display: { width: number; hei
   ctx.drawImage(img, 0, 0, c.width, c.height);
   return c;
 }
-
-export const toJpeg = (c: HTMLCanvasElement, q = 0.9) =>
-  new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), 'image/jpeg', q));
 
 export const toPng = (c: HTMLCanvasElement) =>
   new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), 'image/png'));

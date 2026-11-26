@@ -14,7 +14,7 @@ describe('client files', () => {
   it('catches common mistakes', () => {
     const bad = { id: 'x', name: '', locked: ['name', 'nope', 'logo'], defaults: { ctaColour: 'red' } };
     expect(validateClient('y', bad as unknown as ClientConfig)).toHaveLength(6);
-    expect(validateClient('y', bad as unknown as ClientConfig)).toContain('"logo" isn\'t a known field. Use one of: name, title, headshot, website, email, phone, linkedin, ctaText, ctaLink, ctaColour, quoteText, quoteAuthor.');
+    expect(validateClient('y', bad as unknown as ClientConfig)).toContain('"logo" isn\'t a known field. Use one of: name, title, website, email, phone, linkedin, ctaText, ctaLink, ctaColour, quoteText, quoteAuthor.');
   });
 });
 

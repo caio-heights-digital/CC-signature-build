@@ -101,14 +101,6 @@ export function imageDimensionProblem(w: number, h: number): Problem | null {
 /** Any shape is welcome in the image option, within reason: it's shrunk to fit and the signature wraps around it. */
 export const MAX_IMAGE_RATIO = 10;
 
-export function headshotDimensionProblem(w: number, h: number, minSide = 200): Problem | null {
-  if (Math.min(w, h) < minSide)
-    return { what: `This photo is only ${w}×${h} px, so it would look blurry in your signature.`, fix: `Use one at least ${minSide}×${minSide} px. Avoid thumbnails saved from LinkedIn or Slack; use the original photo.` };
-  if (w / h > 4 || h / w > 4)
-    return { what: `This image is very ${w > h ? 'wide' : 'tall'} (${w}×${h} px), so a square crop would cut most of it off.`, fix: 'Use a portrait or square photo of yourself.' };
-  return null;
-}
-
 export const multipleFiles = (n: number): Problem => ({ what: `You dropped ${n} files.`, fix: 'Drop just one image.' });
 export const nothingDropped: Problem = { what: 'Nothing was dropped.', fix: 'If you dragged an image from a website or app, save it to your computer first, then drag the file in.' };
 export const unreadable: Problem = { what: 'We couldn’t open this file.', fix: 'If it’s in iCloud, Google Drive or Dropbox, download it to your computer first, then upload it from there.' };

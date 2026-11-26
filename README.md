@@ -1,9 +1,9 @@
 # Heights Email Signature Builder
 
-A web tool that lets each client's team make a consistent email signature: fill in the form, upload and crop a photo, click **Copy signature**, paste into Gmail or Outlook.
+A web tool that lets each client's team make a consistent email signature: fill in the form, optionally add an image, click **Copy signature**, paste into Gmail or Outlook.
 
 - Live link per client: `signatures.heights.digital/<client>` (or `?client=<client>` anywhere)
-- Photos and images are stored in Cloudinary; everything else runs in the browser
+- Images are stored in Cloudinary; everything else runs in the browser
 - No database, no logins
 
 ## Everyday tasks
@@ -18,8 +18,8 @@ A web tool that lets each client's team make a consistent email signature: fill 
 6. Commit. The client's link is `…/<client-id>`.
 
 Field names you can use in `defaults`, `locked` and `required`:
-`name, title, headshot, website, email, phone, linkedin, ctaText, ctaLink, ctaColour, quoteText, quoteAuthor`.
-Personal fields (`name`, `title`, `headshot`) can't be locked.
+`name, title, website, email, phone, linkedin, ctaText, ctaLink, ctaColour, quoteText, quoteAuthor`.
+Personal fields (`name`, `title`) can't be locked.
 
 ### Changing a client's brand colour or the icons
 
@@ -38,7 +38,7 @@ Personal fields (`name`, `title`, `headshot`) can't be locked.
 npm install
 npm run dev          # local site at http://localhost:5173  (try /demo-locked or ?client=demo-locked)
 npm test             # unit tests (template, client files, form logic)
-npm run test:e2e     # browser tests; the photo service is simulated, nothing real is uploaded
+npm run test:e2e     # browser tests; the image service is simulated, nothing real is uploaded
 npm run build        # production site in dist/
 npm run build:preview  # one self-contained HTML file in dist-preview/, for quick review links
 ```
@@ -52,8 +52,8 @@ If Playwright can't find a browser, set `PW_CHROMIUM` to a Chromium executable.
 | `clients/` | One settings file per client |
 | `src/template/` | **The email signature HTML.** The fragile part; read the rules at the top of `signature.ts` before changing it |
 | `src/builder/` | The form: field list (`fields.ts`), form → signature data (`data.ts`), upload boxes |
-| `src/image/` | File checks with plain-language errors, crop dialog, resizing |
-| `src/upload/` | Photo hosting (Cloudinary). The only file to change to switch provider or move to signed uploads |
+| `src/image/` | File checks with plain-language errors, resizing (and GIF resizing) |
+| `src/upload/` | Image hosting (Cloudinary). The only file to change to switch provider or move to signed uploads |
 | `src/config/` | Client file format and loading |
 | `src/styles/tokens.css` | Colours, type and spacing from Figma |
 | `tests/` | `unit/` (Vitest) and `e2e/` (Playwright) |
@@ -73,7 +73,7 @@ Any static host works. It needs:
 
 ## Before launch (not done yet)
 
-- **Signed uploads.** Uploads currently use an *unsigned* Cloudinary preset, so anyone who finds the page could upload images to the account. Add a small server function that signs uploads, and lets **Remove** delete the photo. Only `src/upload/cloudinary.ts` changes.
+- **Signed uploads.** Uploads currently use an *unsigned* Cloudinary preset, so anyone who finds the page could upload images to the account. Add a small server function that signs uploads, and lets **Remove** delete the image. Only `src/upload/cloudinary.ts` changes.
 - **Cloudinary account** is on a personal login; move it to Heights before clients use it.
-- **Privacy note and GDPR check** for headshots.
+- **Privacy note and GDPR check** for uploaded images.
 - **Real inbox tests**: `docs/inbox-checklist.md`.

@@ -5,16 +5,14 @@ import { contrastRatio, displayUrl, isEmail, normaliseHex, normaliseUrl, telHref
 const full: SignatureData = {
   name: 'Anastasiia Cherevychna',
   title: 'Designer',
-  photo: { src: 'https://res.cloudinary.com/x/image/upload/v1/a.jpg' },
   image: { src: 'https://res.cloudinary.com/x/image/upload/v1/i.png', width: 128, height: 128, alt: 'Heights Digital' },
   website: 'https://heights.digital/',
-  email: 'name@heights.digital',
+  emailLine: 'name@heights.digital',
   phone: { display: '+351 912 345 678', href: 'tel:+351912345678' },
   linkedin: 'https://linkedin.com/in/someone',
   cta: { text: 'Book a call', href: 'https://calendly.com/x', colour: '#CAFC3B' },
   quote: { text: 'The best agency we’ve worked with.', author: 'Sarah Lee, Acme Ltd' },
   icons: {
-    email: { light: 'https://signatures.heights.digital/icons/email.png', dark: 'https://signatures.heights.digital/icons/email-white.png' },
     website: { light: 'https://signatures.heights.digital/icons/website.png', dark: 'https://signatures.heights.digital/icons/website-white.png' },
     phone: { light: 'https://signatures.heights.digital/icons/phone.png', dark: 'https://signatures.heights.digital/icons/phone-white.png' },
     linkedin: { light: 'https://signatures.heights.digital/icons/linkedin.png', dark: 'https://signatures.heights.digital/icons/linkedin-white.png' },
@@ -34,39 +32,38 @@ describe('signature HTML is email-safe', () => {
   });
   it('hides the white icons unless the app is in dark mode (so Gmail, which strips the style, shows the outlined ones)', () => {
     const dark = html.match(/<img class="hs-ic-d"[^>]+>/g)!;
-    expect(dark).toHaveLength(4);
+    expect(dark).toHaveLength(3);
     for (const i of dark) expect(i).toMatch(/display:none;max-height:0;overflow:hidden;mso-hide:all;/);
     expect(html).toContain('@media (prefers-color-scheme:dark){.hs-ic-l{display:none!important}');
     expect(buildSignatureHtml({ name: 'J', title: 'T' })).not.toContain('<style');
   });
   it('gives every image explicit width and height', () => {
     const imgs = html.match(/<img [^>]+>/g)!;
-    expect(imgs).toHaveLength(10); // photo, image, 4 contact icons × light and dark
+    expect(imgs).toHaveLength(7); // image, 3 contact icons × light and dark
     for (const img of imgs) expect(img).toMatch(/width="\d+" height="\d+"/);
   });
   it('includes every filled-in part', () => {
     for (const s of ['Anastasiia Cherevychna', 'Designer', 'heights.digital', 'mailto:name@heights.digital',
       'tel:+351912345678', 'LinkedIn', 'Book a call', 'bgcolor="#CAFC3B"', 'Sarah Lee']) expect(html).toContain(s);
   });
-  it('shows email, website, phone and LinkedIn as a row of clickable icons', () => {
+  it('shows website, phone and LinkedIn as a row of clickable icons (no email icon)', () => {
     const row = html.match(/<table[^>]*margin-top:10px;"><tr>(.*?)<\/tr><\/table>/)![1];
     const links = [...row.matchAll(/<a href="([^"]+)"[^>]*><img class="hs-ic-l" src="[^"]+icons\/(\w+)\.png" width="28" height="28" alt="([^"]+)"/g)].map((m) => [m[2], m[1], m[3]]);
     expect(links).toEqual([
-      ['email', 'mailto:name@heights.digital', 'name@heights.digital'],
       ['website', 'https://heights.digital/', 'heights.digital'],
       ['phone', 'tel:+351912345678', '+351 912 345 678'],
       ['linkedin', 'https://linkedin.com/in/someone', 'LinkedIn'],
     ]);
   });
   it('only shows icons for filled-in fields', () => {
-    const h = buildSignatureHtml({ name: 'J', title: 'T', email: 'j@x.com', icons: full.icons });
-    expect(h).toContain('icons/email.png');
-    expect(h).not.toMatch(/icons\/(website|phone|linkedin)/);
+    const h = buildSignatureHtml({ name: 'J', title: 'T', website: 'https://x.com/', icons: full.icons });
+    expect(h).toContain('icons/website.png');
+    expect(h).not.toMatch(/icons\/(phone|linkedin)/);
   });
   it('falls back to text links when icons aren’t available', () => {
     const h = buildSignatureHtml({ ...full, icons: {} });
     expect(h).not.toContain('icons/');
-    expect(h).toContain('>name@heights.digital</span>');
+    expect(h).toContain('>heights.digital</span>');
     expect(h).toContain('>LinkedIn</span>');
   });
   it('never shows a placeholder by default', () => {
@@ -140,7 +137,7 @@ describe('the email address line under the job title', () => {
     expect(link).toBe(`${titleDiv}text-decoration:none;`); // a link, so email apps don’t colour or underline it themselves
   });
   it('is left out when empty, and escaped when not', () => {
-    expect(buildSignatureHtml(full)).not.toContain('mailto:anastasiia');
+    expect(buildSignatureHtml({ ...full, emailLine: undefined })).not.toContain('mailto:');
     expect(buildSignatureHtml({ ...full, emailLine: 'a"b@x.com' })).toContain('mailto:a&quot;b@x.com');
   });
   it('adds a line to the plain-text version under the job title', () => {
@@ -155,7 +152,7 @@ describe('the email address line under the job title', () => {
 describe('text and file versions', () => {
   it('plain text has the essentials', () => {
     expect(buildSignatureText(full)).toBe(
-      'Anastasiia Cherevychna\nDesigner\nheights.digital | name@heights.digital | +351 912 345 678 | https://linkedin.com/in/someone\nBook a call: https://calendly.com/x\n\n“The best agency we’ve worked with.” –Sarah Lee, Acme Ltd',
+      'Anastasiia Cherevychna\nDesigner\nname@heights.digital\nheights.digital | +351 912 345 678 | https://linkedin.com/in/someone\nBook a call: https://calendly.com/x\n\n“The best agency we’ve worked with.” –Sarah Lee, Acme Ltd',
     );
   });
   it('download is a full HTML document', () => {

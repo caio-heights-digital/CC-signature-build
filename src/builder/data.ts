@@ -15,10 +15,6 @@ export interface ImageState {
 
 export interface FormState {
   values: Record<TextKey, string>;
-  noHeadshot: boolean;
-  /** On: the email is an envelope icon in the contact row. Off: it's a line of text under the job title. */
-  emailAsIcon: boolean;
-  headshot: ImageState | null;
   /** The optional image on the right of the signature, shown at up to 128 × 128. */
   image: ImageState | null;
 }
@@ -36,9 +32,6 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
 
   const d: SignatureData = { name: v('name') || 'Full Name', title: v('title') || 'Job title' };
 
-  const photo = s.noHeadshot ? '' : img(s.headshot);
-  if (photo) d.photo = { src: photo, alt: v('name') };
-
   // The image only appears once someone uploads one; until then the preview shows a grey placeholder.
   const image = img(s.image);
   if (image) d.image = { src: image, width: s.image?.width ?? 128, height: s.image?.height ?? 128, alt: client.name };
@@ -46,10 +39,7 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
 
   const website = normaliseUrl(v('website'));
   if (website) d.website = website;
-  if (isEmail(v('email'))) { // only a properly formed address ever appears
-    if (s.emailAsIcon) d.email = v('email');
-    else d.emailLine = v('email');
-  }
+  if (isEmail(v('email'))) d.emailLine = v('email'); // only a properly formed address ever appears, written out under the job title
   const tel = telHref(v('phone'));
   if (tel) d.phone = { display: v('phone'), href: tel };
   const li = normaliseUrl(v('linkedin'));
@@ -69,20 +59,19 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
   return d;
 }
 
-export const ICON_KEYS: IconKey[] = ['email', 'website', 'phone', 'linkedin'];
+export const ICON_KEYS: IconKey[] = ['website', 'phone', 'linkedin'];
 /** Icons live on this site at a fixed link, so they can be redesigned without anyone re-copying. */
 export const ICON_PATH = (k: IconKey, mode: 'light' | 'dark' = 'light') => `/icons/${k}${mode === 'dark' ? '-white' : ''}.png`;
 const isPublic = (src: string) => /^https:\/\//.test(src);
 
-export type Missing = 'photo' | 'image' | 'icons';
+export type Missing = 'image' | 'icons';
 
 /** Images that won't make it into the email copy, so we can say so. */
 export function missingFromEmail(s: FormState, resolve: (src: string) => string): Missing[] {
   const out: Missing[] = [];
-  if (!s.noHeadshot && s.headshot && !s.headshot.hosted) out.push('photo');
   if (s.image && !s.image.hosted) out.push('image');
   const d = s.values;
-  const usesIcons = [s.emailAsIcon ? d.email : '', d.website, d.phone, d.linkedin].some((x) => x.trim()); // written-out email needs no icon
-  if (usesIcons && !isPublic(resolve(ICON_PATH('email')))) out.push('icons');
+  const usesIcons = [d.website, d.phone, d.linkedin].some((x) => x.trim()); // the email is written out, so needs no icon
+  if (usesIcons && !isPublic(resolve(ICON_PATH('website')))) out.push('icons');
   return out;
 }

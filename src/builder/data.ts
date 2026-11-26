@@ -66,7 +66,11 @@ export const ICON_KEYS: IconKey[] = ['website', 'phone', 'linkedin'];
 /** Icons live on this site at a fixed link, so they can be redesigned without anyone re-copying. */
 /** The grey arrow chip on the CTA button (Figma's button, 2× PNG). On this site, like the icons. */
 export const CTA_ARROW_PATH = '/icons/cta-arrow.png';
-export const ICON_PATH = (k: IconKey, mode: 'light' | 'dark' = 'light') => `/icons/${k}${mode === 'dark' ? '-white' : ''}.png`;
+/**
+ * Contact icons (CarbonChain Figma set, 26 Nov 2026): v2 folder, so signatures copied before then keep the
+ * original icons in /icons/. Light = #444444 with a 1 px white outline (Gmail keeps it in dark mode); dark = #FDFDFC.
+ */
+export const ICON_PATH = (k: IconKey, mode: 'light' | 'dark' = 'light') => `/icons/v2/${k}${mode === 'dark' ? '-white' : ''}.png`;
 const isPublic = (src: string) => /^https:\/\//.test(src);
 
 export type Missing = 'image' | 'icons';

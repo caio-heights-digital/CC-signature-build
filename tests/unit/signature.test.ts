@@ -13,9 +13,9 @@ const full: SignatureData = {
   cta: { text: 'Book a call', href: 'https://calendly.com/x', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png' },
   quote: { text: 'The best agency we’ve worked with.', author: 'Sarah Lee, Acme Ltd' },
   icons: {
-    website: { light: 'https://signatures.heights.digital/icons/website.png', dark: 'https://signatures.heights.digital/icons/website-white.png' },
-    phone: { light: 'https://signatures.heights.digital/icons/phone.png', dark: 'https://signatures.heights.digital/icons/phone-white.png' },
-    linkedin: { light: 'https://signatures.heights.digital/icons/linkedin.png', dark: 'https://signatures.heights.digital/icons/linkedin-white.png' },
+    website: { light: 'https://signatures.heights.digital/icons/v2/website.png', dark: 'https://signatures.heights.digital/icons/v2/website-white.png' },
+    phone: { light: 'https://signatures.heights.digital/icons/v2/phone.png', dark: 'https://signatures.heights.digital/icons/v2/phone-white.png' },
+    linkedin: { light: 'https://signatures.heights.digital/icons/v2/linkedin.png', dark: 'https://signatures.heights.digital/icons/v2/linkedin-white.png' },
   },
 };
 
@@ -48,7 +48,7 @@ describe('signature HTML is email-safe', () => {
   });
   it('shows website, phone and LinkedIn as a row of clickable icons (no email icon)', () => {
     const row = html.match(/<table[^>]*margin-top:10px;"><tr>(.*?)<\/tr><\/table>/)![1];
-    const links = [...row.matchAll(/<a href="([^"]+)"[^>]*><img class="hs-ic-l" src="[^"]+icons\/(\w+)\.png" width="28" height="28" alt="([^"]+)"/g)].map((m) => [m[2], m[1], m[3]]);
+    const links = [...row.matchAll(/<a href="([^"]+)"[^>]*><img class="hs-ic-l" src="[^"]+icons\/v2\/(\w+)\.png" width="28" height="28" alt="([^"]+)"/g)].map((m) => [m[2], m[1], m[3]]);
     expect(links).toEqual([
       ['website', 'https://heights.digital/', 'heights.digital'],
       ['phone', 'tel:+351912345678', '+351 912 345 678'],
@@ -57,7 +57,7 @@ describe('signature HTML is email-safe', () => {
   });
   it('only shows icons for filled-in fields', () => {
     const h = buildSignatureHtml({ name: 'J', title: 'T', website: 'https://x.com/', icons: full.icons });
-    expect(h).toContain('icons/website.png');
+    expect(h).toContain('icons/v2/website.png');
     expect(h).not.toMatch(/icons\/(phone|linkedin)/);
   });
   it('falls back to text links when icons aren’t available', () => {

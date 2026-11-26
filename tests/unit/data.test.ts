@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { missingFromEmail, toSignatureData, type FormState } from '../../src/builder/data';
+import { ICON_PATH, missingFromEmail, toSignatureData, type FormState } from '../../src/builder/data';
 import { FIELDS, type TextKey } from '../../src/builder/fields';
 import { buildSignatureHtml } from '../../src/template/signature';
 import { isEmail } from '../../src/template/format';
@@ -18,8 +18,8 @@ describe('form → signature data', () => {
   it('icons are full public links on the live site, and left out (and reported) on a local machine', () => {
     const values = { ...blank(), name: 'J', title: 'T', website: 'x.com' };
     expect(toSignatureData(form({ values }), client, 'email', live).icons?.website).toEqual({
-      light: 'https://signatures.heights.digital/icons/website.png',
-      dark: 'https://signatures.heights.digital/icons/website-white.png',
+      light: 'https://signatures.heights.digital/icons/v2/website.png',
+      dark: 'https://signatures.heights.digital/icons/v2/website-white.png',
     });
     expect(toSignatureData(form({ values }), client, 'email', local).icons).toEqual({});
     expect(missingFromEmail(form({ values }), local)).toContain('icons');
@@ -97,6 +97,15 @@ describe('the one Email field: always written out in full under the job title', 
       expect(field.check!(bad, blank()), bad).toMatch(/looks incomplete/);
       expect(isEmail(bad), bad).toBe(false);
       expect(make(bad).emailLine, bad).toBeUndefined();
+    }
+  });
+});
+
+describe('contact icon paths', () => {
+  it('uses the new CarbonChain set in icons/v2 (the original icons stay in icons/ for signatures copied earlier)', () => {
+    for (const k of ['website', 'phone', 'linkedin'] as const) {
+      expect(ICON_PATH(k)).toBe(`/icons/v2/${k}.png`);
+      expect(ICON_PATH(k, 'dark')).toBe(`/icons/v2/${k}-white.png`);
     }
   });
 });

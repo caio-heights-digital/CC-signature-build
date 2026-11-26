@@ -122,6 +122,16 @@ test('the last section is called CTA, with just the button text (pre-filled) and
   await expect(page.getByText(/quote/i)).toHaveCount(0);
 });
 
+test('the dark-mode note sits under the Image title in the form, not above the preview', async ({ page }) => {
+  await page.goto('/');
+  const note = page.locator('#imageField #imageNote');
+  await expect(note).toHaveText('Each recipient’s email app applies its own dark mode, so check your image works on both.');
+  await expect(page.locator('#preview').locator('..').getByText('applies its own dark mode')).toHaveCount(0);
+  const y = async (sel: string) => (await page.locator(sel).boundingBox())!.y;
+  expect(await y('#imageLabel')).toBeLessThan(await y('#imageNote'));
+  expect(await y('#imageNote')).toBeLessThan(await y('#imageField .drop'));
+});
+
 test('there is no headshot: no upload, no crop, no switch, and nothing for it in the preview or the copy', async ({ page }) => {
   await fakeCloudinary(page);
   await page.goto('/');

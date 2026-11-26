@@ -28,7 +28,8 @@
           <!-- Right-hand side of the signature: an optional image, shown at up to 128 × 128. -->
           <div class="field upload" id="imageField" data-field="image">
             <span class="label" id="imageLabel">Image (optional)</span>
-            <div class="drop" data-state="empty" aria-labelledby="imageLabel">
+            <p class="hint hint-top" id="imageNote">Each recipient’s email app applies its own dark mode, so check your image works on both.</p>
+            <div class="drop" data-state="empty" aria-labelledby="imageLabel" aria-describedby="imageNote">
               <img class="icon16" src="/src/assets/icons/upload.svg" width="16" height="16" alt="">
               <p>Drag &amp; Drop an image (JPG, PNG or GIF), or</p>
               <button type="button" class="btn btn-outline btn-sm" data-browse>Browse files</button>
@@ -76,7 +77,6 @@
             <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
           </div>
         </div>
-        <p class="note">Each recipient’s email app applies its own dark mode, so check your image works on both.</p>
         <div class="preview" id="preview" data-theme="light" aria-label="Signature preview">
           <div class="preview-inner" id="previewInner"></div>
         </div>

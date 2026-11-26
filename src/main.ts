@@ -6,10 +6,10 @@ import { missingFromEmail, toSignatureData, type FormState } from './builder/dat
 import { createUploadField } from './builder/upload-field';
 import { saveFile } from './builder/save-file';
 import { attachColourPicker } from './builder/colour-picker';
-import { damaged, gifSizeProblem, headshotDimensionProblem, imageDimensionProblem, imageDisplaySize, logoDimensionProblem } from './image/check';
+import { damaged, gifSizeProblem, headshotDimensionProblem, imageDimensionProblem, imageDisplaySize } from './image/check';
 import { gifFitsAsIs, gifSizesToTry, resizeGif } from './image/gif';
 import { createCropper, type CropState } from './image/crop';
-import { blobToDataUrl, loadImageFile, renderHeadshot, renderImage, renderLogo, toJpeg, toPng, type LoadedImage } from './image/process';
+import { blobToDataUrl, loadImageFile, renderHeadshot, renderImage, toJpeg, toPng, type LoadedImage } from './image/process';
 import { UploadError, uploadImage } from './upload/cloudinary';
 import { normaliseHex } from './template/format';
 import { buildSignatureDocument, buildSignatureHtml, buildSignatureText } from './template/signature';
@@ -31,7 +31,7 @@ function showBanner(text: string, bad = false) {
   banner.hidden = false;
 }
 
-/** Paths like "/clients/acme/logo.png" are on this site; make them full links for email. */
+/** Paths like "/icons/email.png" are on this site; make them full links for email. */
 function siteBase(): URL {
   const u = new URL('./', location.href);
   const segs = u.pathname.split('/').filter(Boolean);
@@ -51,16 +51,14 @@ function start(cfg: ClientConfig) {
   const locked = new Set<FieldKey>(cfg.locked ?? []);
   const required = new Set<FieldKey>([...ALWAYS_REQUIRED, ...(cfg.required ?? [])]);
   const upload = PREVIEW_BUILD ? undefined : cfg.upload;
-  if (PREVIEW_BUILD) showBanner('Preview version: photos and logos aren’t uploaded here, so they’re left out when you copy. Everything else works as it will on the live link.');
-  else if (!upload) showBanner('Photo hosting isn’t set up for this link yet, so photos and logos are left out when you copy.', true);
+  if (PREVIEW_BUILD) showBanner('Preview version: photos and images aren’t uploaded here, so they’re left out when you copy. Everything else works as it will on the live link.');
+  else if (!upload) showBanner('Photo hosting isn’t set up for this link yet, so photos and images are left out when you copy.', true);
 
   const state: FormState = {
     values: Object.fromEntries(FIELDS.map((f) => [f.key, cfg.defaults?.[f.key] ?? ''])) as Record<TextKey, string>,
     noHeadshot: false,
     emailAsIcon: true, // as before: an envelope icon
     headshot: null,
-    logo: null,
-    slot: 'logo',
     image: null,
   };
   const touched = new Set<TextKey>();
@@ -172,7 +170,7 @@ function start(cfg: ClientConfig) {
   const cropper = createCropper($<HTMLDialogElement>('cropDialog'));
   let hsSource: LoadedImage | null = null;
   let hsCrop: CropState | null = null;
-  const busy = { headshot: false, logo: false, image: false };
+  const busy = { headshot: false, image: false };
 
   const hsField = createUploadField($('headshotField'), (f) => void addHeadshot(f), {
     remove: () => { state.headshot = null; hsSource = null; hsCrop = null; hsField.show('empty'); hsField.error(null); schedule(); },
@@ -231,32 +229,7 @@ function start(cfg: ClientConfig) {
     schedule();
   });
 
-  // ---------- logo
-  const logoField = createUploadField($('logoField'), (f) => void addLogo(f), {
-    remove: () => { state.logo = null; logoField.show('empty'); logoField.error(null); schedule(); },
-  });
-  if (locked.has('logo')) $('logoField').hidden = true;
-
-  async function addLogo(file: File) {
-    logoField.error(null);
-    const r = await loadImageFile(file);
-    if (!r.ok) return logoField.error(r.problem);
-    const dim = logoDimensionProblem(r.value.w, r.value.h);
-    if (dim) return logoField.error(dim);
-    busy.logo = true;
-    logoField.progress('Trimming and resizing…', 40);
-    const { canvas, width, height } = renderLogo(r.value.img);
-    const preview = canvas.toDataURL('image/png');
-    const blob = await toPng(canvas);
-    const hosted = await host(blob, 'logo.png', logoField);
-    busy.logo = false;
-    if (hosted === false) { state.logo = null; logoField.show('empty'); schedule(); return; }
-    state.logo = { preview, hosted: hosted || undefined, width, height };
-    logoField.done(preview, r.value.name);
-    schedule();
-  }
-
-  // ---------- 128 × 128 image (the alternative to the logo)
+  // ---------- 128 × 128 image
   const imageField = createUploadField($('imageField'), (f) => void addImage(f), {
     remove: () => { state.image = null; imageField.show('empty'); imageField.error(null); schedule(); },
   });
@@ -310,19 +283,6 @@ function start(cfg: ClientConfig) {
     schedule();
   }
 
-  // Logo or image: one box at a time, and only the chosen one goes into the signature.
-  const slotBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-slot-btn]')];
-  function chooseSlot(slot: FormState['slot']) {
-    state.slot = slot;
-    slotBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.slotBtn === slot)));
-    $('logoField').hidden = slot !== 'logo';
-    $('imageField').hidden = slot !== 'image';
-    schedule();
-  }
-  slotBtns.forEach((b) => b.addEventListener('click', () => chooseSlot(b.dataset.slotBtn as FormState['slot'])));
-  // A client's fixed logo replaces the whole choice.
-  if (locked.has('logo')) { $('slotField').hidden = true; $('imageField').hidden = true; }
-
   // ---------- preview
   const previewInner = $('previewInner');
   let raf = 0;
@@ -359,7 +319,7 @@ function start(cfg: ClientConfig) {
     for (const k of FIELDS.map((f) => f.key)) touched.add(k);
     const bad = FIELDS.filter((f) => !locked.has(f.key) && !validateField(f.key));
     const missingPhoto = !state.noHeadshot && !state.headshot && required.has('headshot');
-    if (busy.headshot || busy.logo || busy.image) { say('Wait a moment, your image is still uploading.', false); return false; }
+    if (busy.headshot || busy.image) { say('Wait a moment, your image is still uploading.', false); return false; }
     if (missingPhoto) hsField.error({ what: 'Add a photo, or turn on “I want a signature without a headshot”.', fix: 'JPG or PNG, square works best.' });
     if (bad.length || missingPhoto) {
       const names = [...bad.map((f) => f.label.toLowerCase()), ...(missingPhoto ? ['headshot'] : [])];
@@ -373,16 +333,15 @@ function start(cfg: ClientConfig) {
   }
 
   function emailNote(prefix: string): [string, boolean] {
-    const missing = missingFromEmail(state, cfg, resolveAsset);
+    const missing = missingFromEmail(state, resolveAsset);
     if (!missing.length) return [`${prefix} Now follow “How to install” below.`, true];
     const notes: string[] = [];
-    const yours = missing.filter((m) => m === 'photo' || m === 'logo' || m === 'image');
+    const yours = missing.filter((m) => m === 'photo' || m === 'image');
     if (yours.length) {
       const why = PREVIEW_BUILD ? 'images aren’t hosted in this preview' : !upload ? 'photo hosting isn’t set up for this link' : 'it didn’t upload. Try adding it again';
       notes.push(`Your ${yours.join(' and ')} ${yours.length > 1 ? 'were' : 'was'} left out because ${why}.`);
     }
-    const site = missing.filter((m) => m === 'client-logo' || m === 'icons').map((m) => (m === 'icons' ? 'contact icons' : 'company logo'));
-    if (site.length) notes.push(`The ${site.join(' and ')} ${site.length > 1 ? 'were' : 'was'} left out because this page isn’t on a public link yet (they’ll be included once the tool is live).`);
+    if (missing.includes('icons')) notes.push(`The contact icons were left out because this page isn’t on a public link yet (they’ll be included once the tool is live).`);
     return [`${prefix} ${notes.join(' ')}`, false];
   }
 

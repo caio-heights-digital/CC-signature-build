@@ -1,4 +1,4 @@
-/** Wires one upload box (headshot or logo): drag & drop, browse, progress, done state, errors. */
+/** Wires one upload box (headshot or image): drag & drop, browse, progress, done state, errors. */
 import { multipleFiles, nothingDropped, type Problem } from '../image/check';
 
 type State = 'empty' | 'working' | 'done';

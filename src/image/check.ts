@@ -109,14 +109,6 @@ export function headshotDimensionProblem(w: number, h: number, minSide = 200): P
   return null;
 }
 
-export function logoDimensionProblem(w: number, h: number): Problem | null {
-  if (w < 120 && h < 40)
-    return { what: `This logo is only ${w}×${h} px, so it would look blurry.`, fix: 'Use a larger version, at least 300 px wide. Your designer or brand guidelines should have one.' };
-  if (h / w > 3)
-    return { what: `This logo is very tall and narrow (${w}×${h} px).`, fix: 'Use the horizontal version of your logo.' };
-  return null;
-}
-
 export const multipleFiles = (n: number): Problem => ({ what: `You dropped ${n} files.`, fix: 'Drop just one image.' });
 export const nothingDropped: Problem = { what: 'Nothing was dropped.', fix: 'If you dragged an image from a website or app, save it to your computer first, then drag the file in.' };
 export const unreadable: Problem = { what: 'We couldn’t open this file.', fix: 'If it’s in iCloud, Google Drive or Dropbox, download it to your computer first, then upload it from there.' };

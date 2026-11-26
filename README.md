@@ -3,7 +3,7 @@
 A web tool that lets each client's team make a consistent email signature: fill in the form, upload and crop a photo, click **Copy signature**, paste into Gmail or Outlook.
 
 - Live link per client: `signatures.heights.digital/<client>` (or `?client=<client>` anywhere)
-- Photos and logos are stored in Cloudinary; everything else runs in the browser
+- Photos and images are stored in Cloudinary; everything else runs in the browser
 - No database, no logins
 
 ## Everyday tasks
@@ -13,17 +13,17 @@ A web tool that lets each client's team make a consistent email signature: fill 
 1. Copy `clients/heights.json` to `clients/<client-id>.json` (lowercase, dashes, e.g. `acme-studio`).
 2. Change `id` (must match the file name) and `name`.
 3. Choose what to pre-fill in `defaults`, what to fix in `locked`, and anything extra in `required`.
-4. By default people upload their own logo (the preview shows a LOGO placeholder until they do). To fix one logo for the whole company instead: put a PNG at `public/clients/<client-id>/logo.png`, **2× the display size**, on a white box with an 8 px margin; set `logo.width` / `logo.height` to the display size; and add `"logo"` to `locked`. (Without a fixed logo, the form also offers an **Image** choice: an image (JPG, PNG or GIF) shown at up to 128 × 128 in the same place, keeping its proportions. A fixed logo hides that choice.)
+4. There's no company logo setting: people can add an optional **Image** (JPG, PNG or GIF), shown at up to 128 × 128 on the right of the signature, keeping its proportions. The preview shows an IMAGE placeholder until they do.
 5. Run `npm test`. It checks every client file and explains any mistake.
 6. Commit. The client's link is `…/<client-id>`.
 
 Field names you can use in `defaults`, `locked` and `required`:
-`name, title, headshot, logo, website, email, phone, linkedin, ctaText, ctaLink, ctaColour, quoteText, quoteAuthor`.
+`name, title, headshot, website, email, phone, linkedin, ctaText, ctaLink, ctaColour, quoteText, quoteAuthor`.
 Personal fields (`name`, `title`, `headshot`) can't be locked.
 
-### Changing a client's logo or brand colour
+### Changing a client's brand colour or the icons
 
-- Fixed logo: replace the PNG at the same path. Signatures people already use pick up the new file automatically, because they point at that link. The same goes for the icons in `public/icons/` (`<name>.png` for light, `<name>-white.png` for dark mode).
+- Icons: replace the PNGs in `public/icons/` (`<name>.png` for light, `<name>-white.png` for dark mode). Signatures people already use pick up the new files automatically, because they point at that link.
 - Anything else (colours, text, layout): people need to re-copy their signature. Tell the client.
 
 ### Releasing a change
@@ -50,7 +50,6 @@ If Playwright can't find a browser, set `PW_CHROMIUM` to a Chromium executable.
 | Folder | What it is |
 | --- | --- |
 | `clients/` | One settings file per client |
-| `public/clients/` | Client logos (served at a fixed public link) |
 | `src/template/` | **The email signature HTML.** The fragile part; read the rules at the top of `signature.ts` before changing it |
 | `src/builder/` | The form: field list (`fields.ts`), form → signature data (`data.ts`), upload boxes |
 | `src/image/` | File checks with plain-language errors, crop dialog, resizing |

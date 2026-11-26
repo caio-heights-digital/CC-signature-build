@@ -64,51 +64,10 @@ export function renderHeadshot(img: HTMLImageElement, sx: number, sy: number, si
   return c;
 }
 
-/** Most room the logo gets in the signature, including its white margin (Figma's box, plus the margin). */
-export const LOGO_BOX = { w: 158, h: 60 };
-/** White margin around the logo, in display px. Keeps it readable when email apps switch to dark mode. */
-export const LOGO_PAD = 8;
-const LOGO_RADIUS = 4;
-
-/**
- * Prepares a logo: trims empty margins, then places it on a white box that hugs it with an even
- * 8 px margin (baked into the image, because email apps would darken a coloured table cell in
- * dark mode), and sizes it at 2× its display size for sharp screens.
- */
-export function renderLogo(img: HTMLImageElement): { canvas: HTMLCanvasElement; width: number; height: number } {
-  const src = document.createElement('canvas');
-  src.width = img.naturalWidth;
-  src.height = img.naturalHeight;
-  const sctx = src.getContext('2d', { willReadFrequently: true })!;
-  sctx.fillStyle = '#ffffff';
-  sctx.fillRect(0, 0, src.width, src.height);
-  sctx.drawImage(img, 0, 0);
-  const box = trimBox(sctx.getImageData(0, 0, src.width, src.height));
-
-  const inner = { w: LOGO_BOX.w - 2 * LOGO_PAD, h: LOGO_BOX.h - 2 * LOGO_PAD };
-  const scale = Math.min(inner.w / box.w, inner.h / box.h);
-  const cw = Math.max(1, Math.round(box.w * scale));
-  const ch = Math.max(1, Math.round(box.h * scale));
-  const width = cw + 2 * LOGO_PAD;
-  const height = ch + 2 * LOGO_PAD;
-
-  const out = document.createElement('canvas');
-  out.width = width * 2;
-  out.height = height * 2;
-  const ctx = out.getContext('2d')!;
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.roundRect(0, 0, out.width, out.height, LOGO_RADIUS * 2);
-  ctx.fill();
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(src, box.x, box.y, box.w, box.h, LOGO_PAD * 2, LOGO_PAD * 2, cw * 2, ch * 2);
-  return { canvas: out, width, height };
-}
-
 /**
  * Draws a still image at the size it will be shown (see imageDisplaySize), at up to 2× for sharp screens
  * (never bigger than the original). It's exactly the image, so the signature wraps tightly around it: no
- * white bars, nothing cropped. See-through areas are put on white, as with the logo, because email apps
+ * white bars, nothing cropped. See-through areas are put on white, because email apps
  * would darken them in dark mode. (GIFs skip this and are used as they are, so they keep moving.)
  */
 export function renderImage(img: HTMLImageElement, display: { width: number; height: number }): HTMLCanvasElement {
@@ -124,28 +83,8 @@ export function renderImage(img: HTMLImageElement, display: { width: number; hei
   return c;
 }
 
-/** Bounding box of everything that isn't (near) white. */
-export function trimBox(data: ImageData): { x: number; y: number; w: number; h: number } {
-  const { width: W, height: H, data: d } = data;
-  let minX = W, minY = H, maxX = -1, maxY = -1;
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const i = (y * W + x) * 4;
-      if (d[i] < 245 || d[i + 1] < 245 || d[i + 2] < 245) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-  }
-  if (maxX < 0) return { x: 0, y: 0, w: W, h: H }; // all white: leave as is
-  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
-}
-
 export const toJpeg = (c: HTMLCanvasElement, q = 0.9) =>
   new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), 'image/jpeg', q));
 
-/** PNG keeps the logo box's rounded corners transparent. */
 export const toPng = (c: HTMLCanvasElement) =>
   new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), 'image/png'));

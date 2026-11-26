@@ -10,7 +10,7 @@ describe('GIFs are accepted only for the 128 × 128 image', () => {
     expect(sniffBytes(bytes('GIF89a\x00\x01'))).toBe('gif');
     expect(sniffBytes(bytes('GIF87a\x00\x01'))).toBe('gif');
   });
-  it('rejects a GIF for the headshot and logo, with the existing message', () => {
+  it('rejects a GIF for the headshot, with the existing message', () => {
     expect(typeProblem('gif', 'a.gif')?.what).toMatch(/GIF, which doesn’t work well in a signature/);
   });
   it('accepts a GIF for the image option, and still accepts JPG and PNG', () => {
@@ -25,7 +25,7 @@ describe('GIFs are accepted only for the 128 × 128 image', () => {
   });
   it('notices a file named .gif that isn’t one', () => {
     expect(typeProblem('webp', 'logo.gif', { gif: true })?.what).toMatch(/named “\.gif”, but the file inside isn’t actually a GIF/);
-    expect(typeProblem('webp', 'logo.gif')?.what).not.toMatch(/named/); // logo and headshot never take GIFs
+    expect(typeProblem('webp', 'logo.gif')?.what).not.toMatch(/named/); // the headshot never takes GIFs
   });
   it('keeps the hosted GIF under 1 MB (bigger ones are shrunk first)', () => {
     expect(gifSizeProblem(MAX_GIF_BYTES)).toBeNull();

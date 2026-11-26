@@ -5,7 +5,7 @@
 import type { FieldKey } from '../config/types';
 import { isEmail, normaliseHex, normaliseUrl, telHref } from '../template/format';
 
-export type TextKey = Exclude<FieldKey, 'headshot' | 'logo'>;
+export type TextKey = Exclude<FieldKey, 'headshot'>;
 export type Section = 'personal' | 'contact' | 'extra';
 
 export interface FieldDef {
@@ -24,7 +24,7 @@ const link = (v: string) => (normaliseUrl(v) ? null : 'This doesn’t look like 
 export const FIELDS: FieldDef[] = [
   { key: 'name', section: 'personal', label: 'Name', placeholder: 'e.g. Jane Smith', autocomplete: 'name' },
   { key: 'title', section: 'personal', label: 'Job title', placeholder: 'e.g. CTO', autocomplete: 'organization-title' },
-  // headshot + logo uploads sit here (see index.html)
+  // headshot + image uploads sit here (see index.html)
   { key: 'website', section: 'contact', label: 'Website', placeholder: 'https://company.com', type: 'url', check: link },
   // Shown as an envelope icon or, with the "Email address as icon" switch off, as a line under the job title.
   { key: 'email', section: 'contact', label: 'Email', placeholder: 'name@company.com', type: 'email', autocomplete: 'email',

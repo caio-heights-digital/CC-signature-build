@@ -13,18 +13,13 @@ export interface ImageState {
   height?: number;
 }
 
-/** What sits on the right of the signature: the company logo or the 128 × 128 image (never both). */
-export type RightSlot = 'logo' | 'image';
-
 export interface FormState {
   values: Record<TextKey, string>;
   noHeadshot: boolean;
   /** On: the email is an envelope icon in the contact row. Off: it's a line of text under the job title. */
   emailAsIcon: boolean;
   headshot: ImageState | null;
-  logo: ImageState | null;
-  /** Which of `logo` / `image` is used. Whichever isn't chosen keeps its upload, so switching back restores it. */
-  slot: RightSlot;
+  /** The optional image on the right of the signature, shown at up to 128 × 128. */
   image: ImageState | null;
 }
 
@@ -44,23 +39,10 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
   const photo = s.noHeadshot ? '' : img(s.headshot);
   if (photo) d.photo = { src: photo, alt: v('name') };
 
-  // The logo only appears once someone uploads one, unless the client has locked in a fixed logo
-  // (a locked logo always wins, and the choice between logo and image isn't offered).
-  if (logoLocked(client)) {
-    if (client.logo) {
-      const src = resolve(client.logo.src);
-      if (purpose === 'preview' || isPublic(src)) d.logo = { ...client.logo, src };
-    }
-  } else if (s.slot === 'image') {
-    const src = img(s.image);
-    if (src) d.image = { src, width: s.image?.width ?? 128, height: s.image?.height ?? 128, alt: client.name };
-    else if (purpose === 'preview') d.imagePlaceholder = true;
-  } else if (s.logo) {
-    const src = img(s.logo);
-    if (src) d.logo = { src, width: s.logo.width!, height: s.logo.height!, alt: client.name };
-  } else if (purpose === 'preview') {
-    d.logoPlaceholder = true;
-  }
+  // The image only appears once someone uploads one; until then the preview shows a grey placeholder.
+  const image = img(s.image);
+  if (image) d.image = { src: image, width: s.image?.width ?? 128, height: s.image?.height ?? 128, alt: client.name };
+  else if (purpose === 'preview') d.imagePlaceholder = true;
 
   const website = normaliseUrl(v('website'));
   if (website) d.website = website;
@@ -91,18 +73,14 @@ export const ICON_KEYS: IconKey[] = ['email', 'website', 'phone', 'linkedin'];
 /** Icons live on this site at a fixed link, so they can be redesigned without anyone re-copying. */
 export const ICON_PATH = (k: IconKey, mode: 'light' | 'dark' = 'light') => `/icons/${k}${mode === 'dark' ? '-white' : ''}.png`;
 const isPublic = (src: string) => /^https:\/\//.test(src);
-export const logoLocked = (c: ClientConfig) => (c.locked ?? []).includes('logo');
 
-export type Missing = 'photo' | 'logo' | 'image' | 'client-logo' | 'icons';
+export type Missing = 'photo' | 'image' | 'icons';
 
 /** Images that won't make it into the email copy, so we can say so. */
-export function missingFromEmail(s: FormState, client: ClientConfig, resolve: (src: string) => string): Missing[] {
+export function missingFromEmail(s: FormState, resolve: (src: string) => string): Missing[] {
   const out: Missing[] = [];
-  const locked = logoLocked(client);
   if (!s.noHeadshot && s.headshot && !s.headshot.hosted) out.push('photo');
-  if (!locked && s.slot === 'logo' && s.logo && !s.logo.hosted) out.push('logo');
-  if (!locked && s.slot === 'image' && s.image && !s.image.hosted) out.push('image');
-  if (locked && client.logo && !isPublic(resolve(client.logo.src))) out.push('client-logo');
+  if (s.image && !s.image.hosted) out.push('image');
   const d = s.values;
   const usesIcons = [s.emailAsIcon ? d.email : '', d.website, d.phone, d.linkedin].some((x) => x.trim()); // written-out email needs no icon
   if (usesIcons && !isPublic(resolve(ICON_PATH('email')))) out.push('icons');

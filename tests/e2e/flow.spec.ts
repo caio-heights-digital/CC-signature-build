@@ -37,8 +37,6 @@ test('full signature: fill in, image, copy with hosted image', async ({ page }) 
   await page.fill('#f-linkedin', 'linkedin.com/in/someone');
   await page.fill('#f-ctaText', 'Book a call');
   await page.fill('#f-ctaLink', 'calendly.com/heights');
-  await page.fill('#f-quoteText', 'Some deep and smart optional quote here');
-  await page.fill('#f-quoteAuthor', 'Someone’s name');
 
   const preview = page.locator('#previewInner');
   await expect(preview).toContainText('Anastasiia Cherevychna');
@@ -111,6 +109,17 @@ test('locked fields are hidden, and their values come from the client file', asy
   expect(html).toContain('acme.example'); // locked website comes from the client file
   expect(html).toContain('>Book a call</a>'); // CTA text and link from the client file
   expect(html).toContain('href="https://acme.example/contact"');
+});
+
+test('the last section is called CTA, with just the button text (pre-filled) and link: no quote fields', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('[data-section="extra"]');
+  await expect(section.locator('h3')).toHaveText('CTA');
+  await expect(page.getByText('Extra', { exact: true })).toHaveCount(0);
+  await expect(section.locator('input')).toHaveCount(2);
+  await expect(page.locator('#f-ctaText')).toHaveValue('Book a demo');
+  await expect(page.locator('#f-quoteText, #f-quoteAuthor')).toHaveCount(0);
+  await expect(page.getByText(/quote/i)).toHaveCount(0);
 });
 
 test('there is no headshot: no upload, no crop, no switch, and nothing for it in the preview or the copy', async ({ page }) => {
@@ -533,7 +542,7 @@ test('contact icons appear as fields are filled in, and each links to the right 
 
 test('the preview stays on screen while the form scrolls', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#f-quoteAuthor').scrollIntoViewIfNeeded();
+  await page.locator('#f-ctaLink').scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   const box = await page.locator('#preview').boundingBox();
   expect(box!.y).toBeGreaterThanOrEqual(0);
@@ -579,8 +588,6 @@ test('screenshots for design review', async ({ page }) => {
   await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.screenshot({ path: 'test-results/empty-image.png', clip: { x: 600, y: 170, width: 740, height: 480 } });
   await addImage(page, 'image-square.png');
-  await page.fill('#f-quoteText', 'Some deep and smart optional quote here');
-  await page.fill('#f-quoteAuthor', 'Someone’s name');
   await page.screenshot({ path: 'test-results/design-match.png', clip: { x: 600, y: 170, width: 740, height: 520 } });
   await page.click('[data-theme-btn="dark"]');
   await page.screenshot({ path: 'test-results/dark.png', clip: { x: 600, y: 170, width: 740, height: 520 } });

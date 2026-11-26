@@ -42,16 +42,12 @@ export const FIELDS: FieldDef[] = [
   { key: 'ctaText', section: 'extra', label: 'CTA button text', placeholder: 'e.g. Book a demo', initial: CTA_TEXT,
     check: (v) => (v.length > 30 ? 'Keep the button text short, under 30 characters.' : null) },
   { key: 'ctaLink', section: 'extra', label: 'CTA link', placeholder: 'https://calendly.com/…', type: 'url', check: link },
-  { key: 'quoteText', section: 'extra', label: 'Quote text', placeholder: 'e.g. The best agency we’ve worked with.',
-    check: (v) => (v.length > 120 ? `This quote is ${v.length} characters. Keep it under 120 so it fits on one or two lines.` : null) },
-  { key: 'quoteAuthor', section: 'extra', label: 'Quote author', placeholder: 'e.g. Sarah Lee, Acme Ltd',
-    check: (_v, all) => (!all.quoteText.trim() ? 'Add the quote text too, or clear this field.' : null) },
 ];
 
 export const SECTION_TITLES: Record<Section, string> = {
   personal: 'Personal Details',
   contact: 'Contact & Social links',
-  extra: 'Extra',
+  extra: 'CTA',
 };
 
 export const ALWAYS_REQUIRED: FieldKey[] = ['name', 'title', 'ctaText', 'ctaLink'];

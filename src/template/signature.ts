@@ -33,7 +33,6 @@ export interface SignatureData {
    * dark arrow); without `arrow` the button is just the label.
    */
   cta?: { text: string; href: string; arrow?: string; arrowDark?: string };
-  quote?: { text: string; author?: string };
   /**
    * Hosted https PNG icons (56 × 56, shown at 28). `light` is charcoal with a white outline, so it stays
    * visible everywhere; `dark` is solid white and is swapped in by apps that support dark-mode code.
@@ -54,8 +53,6 @@ export const COLOURS = {
   title: '#8D8D8B', // job title and email line (26 Nov 2026); #FDFDFC in dark mode, see titleDark
   titleDark: '#FDFDFC',
   nameDark: '#FFFFFF', // the name in dark mode (26 Nov 2026)
-  meta: '#5C5753', // Charcoal at 80%
-  separator: '#CCCAC9', // Light Grey
   link: '#332D28',
 };
 
@@ -164,22 +161,11 @@ export function buildSignatureHtml(d: SignatureData): string {
 
   const top = `<table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>${details}${image}</tr></table>`;
 
-  const quote = d.quote?.text
-    ? `<tr><td style="padding:20px 0 0 0;"><table ${TABLE} width="100%" style="border-collapse:collapse;"><tr>` +
-      `<td height="1" style="border-top:1px solid ${COLOURS.separator};font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>` +
-      `<tr><td style="padding:20px 0 0 0;${FONT}">` +
-      `<div style="${FONT}font-size:20px;line-height:29px;color:${COLOURS.name};">“${esc(d.quote.text.replace(/^["“‘']+|["”’']+$/g, ''))}”</div>` +
-      (d.quote.author
-        ? `<div style="${FONT}font-size:18px;line-height:26px;color:${COLOURS.meta};">–${esc(d.quote.author.replace(/^[-–—\s]+/, ''))}</div>`
-        : '') +
-      `</td></tr>`
-    : '';
-
   const usesDarkIcons = /hs-ic-d|hs-cta|hs-sub|hs-name/.test(top); // only when there's something for dark mode to change
   return (
     (usesDarkIcons ? DARK_STYLE : '') +
     `<table ${TABLE} width="100%" style="border-collapse:collapse;width:100%;max-width:652px;${FONT}">` +
-    `<tr><td style="padding:0;">${top}</td></tr>${quote}</table>`
+    `<tr><td style="padding:0;">${top}</td></tr></table>`
   );
 }
 
@@ -190,7 +176,6 @@ export function buildSignatureText(d: SignatureData): string {
   const contact = [d.website && displayUrl(d.website), d.phone?.display, d.linkedin].filter(Boolean);
   if (contact.length) lines.push(contact.join(' | '));
   if (d.cta?.href) lines.push(`${d.cta.text}: ${d.cta.href}`);
-  if (d.quote?.text) lines.push('', `“${d.quote.text}”${d.quote.author ? ` –${d.quote.author}` : ''}`);
   return lines.filter((l) => l !== undefined).join('\n');
 }
 

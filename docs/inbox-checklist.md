@@ -2,7 +2,7 @@
 
 Run this whenever `src/template/` changes, and once per new client. Use the live link (images must be public).
 
-Make one signature with **everything** filled in (image, website, email, phone, LinkedIn, CTA, quote) and one with **only** name and title. For each email app: install the signature, send an email to a Gmail address and to an Outlook address, and check the received email.
+Make one signature with **everything** filled in (image, website, email, phone, LinkedIn, CTA) and one with **only** name and title. For each email app: install the signature, send an email to a Gmail address and to an Outlook address, and check the received email.
 
 | App | Pastes cleanly | Image shows | Links work | CTA button looks right | Dark mode readable |
 | --- | --- | --- | --- | --- | --- |

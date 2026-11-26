@@ -12,9 +12,7 @@ export type FieldKey =
   | 'phone'
   | 'linkedin'
   | 'ctaText'
-  | 'ctaLink'
-  | 'quoteText'
-  | 'quoteAuthor';
+  | 'ctaLink';
 
 export interface UploadConfig {
   provider: 'cloudinary';

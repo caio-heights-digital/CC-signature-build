@@ -13,7 +13,6 @@ export type FieldKey =
   | 'linkedin'
   | 'ctaText'
   | 'ctaLink'
-  | 'ctaColour'
   | 'quoteText'
   | 'quoteAuthor';
 

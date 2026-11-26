@@ -24,11 +24,16 @@ describe('form → signature data', () => {
     expect(toSignatureData(form({ values }), client, 'email', local).icons).toEqual({});
     expect(missingFromEmail(form({ values }), local)).toContain('icons');
   });
-  it('only adds a CTA when it has both text and a working link', () => {
-    const v = { ...blank(), name: 'J', title: 'T', ctaText: 'Book a call' };
-    expect(toSignatureData(form({ values: v }), client, 'email', live).cta).toBeUndefined();
-    const d = toSignatureData(form({ values: { ...v, ctaLink: 'cal.com/j', ctaColour: 'abc' } }), client, 'email', live);
-    expect(d.cta).toEqual({ text: 'Book a call', href: 'https://cal.com/j', colour: '#AABBCC' });
+  it('always has the CTA button: "Book a demo" until text is typed, and the link once there is one', () => {
+    const blankCta = toSignatureData(form(), client, 'preview', live).cta!;
+    expect([blankCta.text, blankCta.href]).toEqual(['Book a demo', '']); // shown in the preview even before the link is added
+    const d = toSignatureData(form({ values: { ...blank(), name: 'J', title: 'T', ctaText: 'Book a call', ctaLink: 'cal.com/j' } }), client, 'email', live);
+    expect(d.cta).toEqual({ text: 'Book a call', href: 'https://cal.com/j', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png' });
+  });
+  it('leaves the arrow chip out of the email on a local machine, and says so', () => {
+    expect(toSignatureData(form(), client, 'email', local).cta?.arrow).toBeUndefined();
+    expect(missingFromEmail(form(), local)).toEqual(['icons']);
+    expect(missingFromEmail(form(), live)).toEqual([]);
   });
   it('ignores links that aren’t LinkedIn in the LinkedIn field', () => {
     const d = toSignatureData(form({ values: { ...blank(), name: 'J', title: 'T', linkedin: 'twitter.com/j' } }), client, 'email', live);
@@ -76,7 +81,6 @@ describe('the one Email field: always written out in full under the job title', 
     const html = buildSignatureHtml(d);
     expect(html).not.toContain('icons/email'); // no envelope icon
     expect(html).toContain('>jane@company.com</a>');
-    expect(missingFromEmail(form({ values: { ...blank(), name: 'J', title: 'T', email: 'j@x.com' } }), local)).not.toContain('icons');
   });
   it('accepts a normal address', () => {
     expect(field.check!('jane@company.com', blank())).toBeNull();

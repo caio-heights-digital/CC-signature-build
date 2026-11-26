@@ -5,12 +5,10 @@ import { ALWAYS_REQUIRED, FIELDS, type TextKey } from './builder/fields';
 import { missingFromEmail, toSignatureData, type FormState } from './builder/data';
 import { createUploadField } from './builder/upload-field';
 import { saveFile } from './builder/save-file';
-import { attachColourPicker } from './builder/colour-picker';
 import { damaged, gifSizeProblem, imageDimensionProblem, imageDisplaySize } from './image/check';
 import { gifFitsAsIs, gifSizesToTry, resizeGif } from './image/gif';
 import { blobToDataUrl, loadImageFile, renderImage, toPng } from './image/process';
 import { UploadError, uploadImage } from './upload/cloudinary';
-import { normaliseHex } from './template/format';
 import { buildSignatureDocument, buildSignatureHtml, buildSignatureText } from './template/signature';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -54,7 +52,7 @@ function start(cfg: ClientConfig) {
   else if (!upload) showBanner('Image hosting isn’t set up for this link yet, so images are left out when you copy.', true);
 
   const state: FormState = {
-    values: Object.fromEntries(FIELDS.map((f) => [f.key, cfg.defaults?.[f.key] ?? ''])) as Record<TextKey, string>,
+    values: Object.fromEntries(FIELDS.map((f) => [f.key, cfg.defaults?.[f.key] ?? f.initial ?? ''])) as Record<TextKey, string>,
     image: null,
   };
   const touched = new Set<TextKey>();
@@ -77,7 +75,7 @@ function start(cfg: ClientConfig) {
       r.textContent = '*';
       r.setAttribute('aria-hidden', 'true');
       label.append(r);
-    } else if (f.key !== 'ctaLink' && f.key !== 'ctaColour') {
+    } else {
       label.append(' (optional)');
     }
     const row = document.createElement('div');
@@ -95,26 +93,8 @@ function start(cfg: ClientConfig) {
     err.id = `${id}-err`;
     input.setAttribute('aria-describedby', err.id);
 
-    if (f.key === 'ctaColour') {
-      const sw = document.createElement('button');
-      sw.type = 'button';
-      sw.className = 'swatch';
-      sw.setAttribute('aria-label', 'Pick CTA colour');
-      row.classList.add('has-picker');
-      row.append(sw);
-      const syncSwatch = () => { sw.style.background = normaliseHex(input.value) || '#CAFC3B'; };
-      attachColourPicker(sw, () => input.value, (hex) => { input.value = hex; input.dispatchEvent(new Event('input')); });
-      input.addEventListener('input', syncSwatch);
-      syncSwatch();
-    }
     row.append(input);
     wrap.append(label, row, err);
-    if (f.key === 'ctaColour') {
-      const hint = document.createElement('p');
-      hint.className = 'hint';
-      hint.textContent = 'Type a hex code, or tap the swatch to pick a colour. Button text switches to black or white automatically for contrast.';
-      wrap.append(hint);
-    }
     if (locked.has(f.key)) wrap.hidden = true;
     host.append(wrap);
     inputs[f.key] = input;
@@ -273,7 +253,7 @@ function start(cfg: ClientConfig) {
       const why = PREVIEW_BUILD ? 'images aren’t hosted in this preview' : !upload ? 'image hosting isn’t set up for this link' : 'it didn’t upload. Try adding it again';
       notes.push(`Your image was left out because ${why}.`);
     }
-    if (missing.includes('icons')) notes.push(`The contact icons were left out because this page isn’t on a public link yet (they’ll be included once the tool is live).`);
+    if (missing.includes('icons')) notes.push(`The icons were left out because this page isn’t on a public link yet (they’ll be included once the tool is live).`);
     return [`${prefix} ${notes.join(' ')}`, false];
   }
 

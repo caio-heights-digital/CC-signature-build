@@ -1,8 +1,8 @@
 /** Turns what's on the form into the data the signature template needs. Pure, so it's easy to test. */
 import type { ClientConfig } from '../config/types';
-import { isEmail, normaliseHex, normaliseUrl, telHref } from '../template/format';
+import { isEmail, normaliseUrl, telHref } from '../template/format';
 import type { IconKey, SignatureData } from '../template/signature';
-import type { TextKey } from './fields';
+import { CTA_TEXT, type TextKey } from './fields';
 
 export interface ImageState {
   /** Local copy for the preview (data: URL). */
@@ -46,7 +46,10 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
   if (li && /linkedin\.com\//i.test(li)) d.linkedin = li;
 
   const ctaHref = normaliseUrl(v('ctaLink'));
-  if (v('ctaText') && ctaHref) d.cta = { text: v('ctaText'), href: ctaHref, colour: normaliseHex(v('ctaColour')) || '#CAFC3B' };
+  // The CTA button is always there. Both fields are required, so copying waits until they're filled in;
+  // until then the preview shows the default text and a button that doesn't go anywhere yet.
+  const arrow = resolve(CTA_ARROW_PATH);
+  d.cta = { text: v('ctaText') || CTA_TEXT, href: ctaHref, ...(purpose === 'preview' || isPublic(arrow) ? { arrow } : {}) };
 
   if (v('quoteText')) d.quote = { text: v('quoteText'), author: v('quoteAuthor') || undefined };
 
@@ -61,6 +64,8 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
 
 export const ICON_KEYS: IconKey[] = ['website', 'phone', 'linkedin'];
 /** Icons live on this site at a fixed link, so they can be redesigned without anyone re-copying. */
+/** The grey arrow chip on the CTA button (Figma's button, 2× PNG). On this site, like the icons. */
+export const CTA_ARROW_PATH = '/icons/cta-arrow.png';
 export const ICON_PATH = (k: IconKey, mode: 'light' | 'dark' = 'light') => `/icons/${k}${mode === 'dark' ? '-white' : ''}.png`;
 const isPublic = (src: string) => /^https:\/\//.test(src);
 
@@ -70,8 +75,7 @@ export type Missing = 'image' | 'icons';
 export function missingFromEmail(s: FormState, resolve: (src: string) => string): Missing[] {
   const out: Missing[] = [];
   if (s.image && !s.image.hosted) out.push('image');
-  const d = s.values;
-  const usesIcons = [d.website, d.phone, d.linkedin].some((x) => x.trim()); // the email is written out, so needs no icon
-  if (usesIcons && !isPublic(resolve(ICON_PATH('website')))) out.push('icons');
+  // The CTA button's arrow chip is always used, and it lives on this site like the contact icons.
+  if (!isPublic(resolve(CTA_ARROW_PATH))) out.push('icons');
   return out;
 }

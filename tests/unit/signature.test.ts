@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSignatureDocument, buildSignatureHtml, buildSignatureText, type SignatureData } from '../../src/template/signature';
-import { contrastRatio, displayUrl, isEmail, normaliseHex, normaliseUrl, telHref, textOn } from '../../src/template/format';
+import { displayUrl, isEmail, normaliseUrl, telHref } from '../../src/template/format';
 
 const full: SignatureData = {
   name: 'Anastasiia Cherevychna',
@@ -10,7 +10,7 @@ const full: SignatureData = {
   emailLine: 'name@heights.digital',
   phone: { display: '+351 912 345 678', href: 'tel:+351912345678' },
   linkedin: 'https://linkedin.com/in/someone',
-  cta: { text: 'Book a call', href: 'https://calendly.com/x', colour: '#CAFC3B' },
+  cta: { text: 'Book a call', href: 'https://calendly.com/x', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png' },
   quote: { text: 'The best agency we’ve worked with.', author: 'Sarah Lee, Acme Ltd' },
   icons: {
     website: { light: 'https://signatures.heights.digital/icons/website.png', dark: 'https://signatures.heights.digital/icons/website-white.png' },
@@ -39,12 +39,12 @@ describe('signature HTML is email-safe', () => {
   });
   it('gives every image explicit width and height', () => {
     const imgs = html.match(/<img [^>]+>/g)!;
-    expect(imgs).toHaveLength(7); // image, 3 contact icons × light and dark
+    expect(imgs).toHaveLength(8); // image, 3 contact icons × light and dark, the CTA arrow chip
     for (const img of imgs) expect(img).toMatch(/width="\d+" height="\d+"/);
   });
   it('includes every filled-in part', () => {
     for (const s of ['Anastasiia Cherevychna', 'Designer', 'heights.digital', 'mailto:name@heights.digital',
-      'tel:+351912345678', 'LinkedIn', 'Book a call', 'bgcolor="#CAFC3B"', 'Sarah Lee']) expect(html).toContain(s);
+      'tel:+351912345678', 'LinkedIn', 'Book a call', 'bgcolor="#262626"', 'Sarah Lee']) expect(html).toContain(s);
   });
   it('shows website, phone and LinkedIn as a row of clickable icons (no email icon)', () => {
     const row = html.match(/<table[^>]*margin-top:10px;"><tr>(.*?)<\/tr><\/table>/)![1];
@@ -61,7 +61,7 @@ describe('signature HTML is email-safe', () => {
     expect(h).not.toMatch(/icons\/(phone|linkedin)/);
   });
   it('falls back to text links when icons aren’t available', () => {
-    const h = buildSignatureHtml({ ...full, icons: {} });
+    const h = buildSignatureHtml({ ...full, icons: {}, cta: { text: 'Book a call', href: 'https://calendly.com/x' } }); // nothing from the site's icons folder
     expect(h).not.toContain('icons/');
     expect(h).toContain('>heights.digital</span>');
     expect(h).toContain('>LinkedIn</span>');
@@ -84,9 +84,17 @@ describe('signature HTML is email-safe', () => {
     expect(h).toContain('“Great”');
     expect(h).toContain('–Sam');
   });
-  it('picks readable button text', () => {
-    expect(buildSignatureHtml({ ...full, cta: { ...full.cta!, colour: '#1E3A8A' } })).toContain('color:#FFFFFF;text-decoration:none;text-transform');
-    expect(html).toContain('color:#01000C;text-decoration:none;text-transform');
+  it('draws the CTA button like the Figma component', () => {
+    const cell = html.match(/<td bgcolor="#262626" style="([^"]+)">/)![1];
+    expect(cell).toBe('background-color:#262626;border-radius:6px;padding:0;'); // dark, 6 px corners
+    expect(html).toContain('<td valign="middle" style="padding:13px 10px 13px 16px;"><a href="https://calendly.com/x" style="display:block;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:14px;letter-spacing:0.07px;color:#FDFDFC;text-decoration:none;white-space:nowrap;">Book a call</a></td>');
+    expect(html).toContain('<td valign="middle" style="padding:9px 7px 9px 0;"><a href="https://calendly.com/x" style="display:block;text-decoration:none;"><img src="https://signatures.heights.digital/icons/cta-arrow.png" width="22" height="22" alt=""');
+    expect(html).not.toMatch(/text-transform:uppercase/); // sentence case, as in Figma
+  });
+  it('keeps the button without the arrow chip when the chip image isn’t available', () => {
+    const h = buildSignatureHtml({ ...full, cta: { text: 'Book a call', href: 'https://calendly.com/x' } });
+    expect(h).toContain('padding:13px 16px 13px 16px;');
+    expect(h).not.toContain('cta-arrow');
   });
 });
 
@@ -178,12 +186,5 @@ describe('format helpers', () => {
     expect(telHref('(020) 7946-0018')).toBe('tel:02079460018');
     expect(telHref('123')).toBe('');
   });
-  it('normalises colours and contrast', () => {
-    expect(normaliseHex('abc')).toBe('#AABBCC');
-    expect(normaliseHex('#d4f53c')).toBe('#D4F53C');
-    expect(normaliseHex('red')).toBe('');
-    expect(textOn('#FFFFFF')).toBe('#01000C');
-    expect(textOn('#000000')).toBe('#FFFFFF');
-    expect(contrastRatio('#FFFFFF', '#000000')).toBeCloseTo(21, 0);
-  });
+
 });

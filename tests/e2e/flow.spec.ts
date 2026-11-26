@@ -30,6 +30,7 @@ test('full signature: fill in, image, copy with hosted image', async ({ page }) 
   await page.goto('/');
   await page.fill('#f-name', 'Anastasiia Cherevychna');
   await page.fill('#f-title', 'Designer');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await addImage(page);
   await page.fill('#f-email', 'name@heights.digital');
   await page.fill('#f-phone', '+351 912 345 678');
@@ -42,7 +43,7 @@ test('full signature: fill in, image, copy with hosted image', async ({ page }) 
   const preview = page.locator('#previewInner');
   await expect(preview).toContainText('Anastasiia Cherevychna');
   await expect(preview).toContainText('Book a call');
-  await expect(preview.locator('img:visible')).toHaveCount(4); // image + 3 contact icons (the email is written out, not an icon)
+  await expect(preview.locator('img:visible')).toHaveCount(5); // image + 3 contact icons + the CTA arrow chip (the email is written out)
   await expect(preview.locator('a[href="mailto:name@heights.digital"]')).toHaveText('name@heights.digital');
 
   await page.click('#copyBtn');
@@ -53,7 +54,7 @@ test('full signature: fill in, image, copy with hosted image', async ({ page }) 
   expect(html).toContain(HOSTED);
   expect(html).toContain('href="https://linkedin.com/in/someone"');
   expect(html).toContain('href="https://calendly.com/heights"');
-  expect(html).toContain('bgcolor="#CAFC3B"');
+  expect(html).toContain('bgcolor="#262626"'); // the Figma button
   expect(html).not.toContain('data:image');
   await expect(page.locator('#install')).toHaveAttribute('open', '');
   await page.screenshot({ path: 'test-results/full.png', fullPage: true });
@@ -63,10 +64,14 @@ test('blocks copying until the required fields are there, and says why', async (
   await fakeCloudinary(page);
   await page.goto('/');
   await page.click('#copyBtn');
-  await expect(page.locator('#actionMsg')).toContainText('Check these fields first: name, job title.');
+  await expect(page.locator('#actionMsg')).toContainText('Check these fields first: name, job title, cta link.');
   await expect(page.locator('#f-name-err')).toHaveText('Add your name.');
+  await expect(page.locator('#f-ctaLink-err')).toHaveText('Add your cta link.');
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
+  await page.click('#copyBtn');
+  await expect(page.locator('#actionMsg')).toContainText('Check this field first: cta link.');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.fill('#f-email', 'jane@company');
   await page.click('#copyBtn');
   await expect(page.locator('#f-email-err')).toContainText('looks incomplete');
@@ -97,14 +102,15 @@ test('locked fields are hidden, and their values come from the client file', asy
   await fakeCloudinary(page);
   await page.goto('/?client=demo-locked');
   await expect(page.locator('[data-field="website"]')).toBeHidden();
-  await expect(page.locator('[data-field="ctaColour"]')).toBeHidden();
+  await expect(page.locator('[data-field="ctaColour"], .swatch')).toHaveCount(0); // no CTA colour option
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied'); // copying is async; wait before reading the clipboard
   const html = await clipboardHtml(page);
   expect(html).toContain('acme.example'); // locked website comes from the client file
-  expect(html).toContain('bgcolor="#1E3A8A"'); // locked CTA colour
+  expect(html).toContain('>Book a call</a>'); // CTA text and link from the client file
+  expect(html).toContain('href="https://acme.example/contact"');
 });
 
 test('there is no headshot: no upload, no crop, no switch, and nothing for it in the preview or the copy', async ({ page }) => {
@@ -114,6 +120,7 @@ test('there is no headshot: no upload, no crop, no switch, and nothing for it in
   await expect(page.getByText(/headshot/i)).toHaveCount(0);
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await expect(page.locator('#previewInner svg, #previewInner .ph-photo')).toHaveCount(0); // no grey silhouette
   // the name is the first thing on the left of the signature
   const firstCell = page.locator('#previewInner > table table td').first();
@@ -163,6 +170,7 @@ test('image option: upload a square image, and it goes in at 128 × 128 on white
 
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   const html = await clipboardHtml(page);
@@ -194,6 +202,7 @@ test('image option: an image shorter than 128 px tall is shown at its own height
   await page.goto('/');
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.locator('#imageField input[type=file]').setInputFiles(fx('image-short.png')); // 300 × 90
   await expect(page.locator('#imageField .error')).toBeHidden(); // no more "too small" for a short image
   await expect(page.locator('#imageField .status')).toBeVisible();
@@ -244,6 +253,7 @@ test('image option: a GIF is accepted, kept animated, and uploaded exactly as it
   await expect(page.locator('#imageField .file-name')).toHaveText('anim-square.gif');
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   expect(await clipboardHtml(page)).toContain(`<img src="${HOSTED}" width="128" height="128"`);
@@ -342,6 +352,7 @@ test('image option: a GIF that isn’t square is shrunk proportionately to fit 1
   // copied into the email at its shown size
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   expect(await clipboardHtml(page)).toContain(`<img src="${HOSTED}" width="26" height="128"`);
@@ -403,6 +414,7 @@ test('image option: sits flush top-right, on desktop and on phones', async ({ pa
     await page.goto('/');
     await page.fill('#f-name', 'Anastasiia Cherevychna');
     await page.fill('#f-title', 'Designer');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
         await page.locator('#imageField input[type=file]').setInputFiles(fx('image-square.png'));
     await expect(page.locator('#imageField .status')).toBeVisible();
     await expect(page.locator('#previewInner img[width="128"]')).toHaveCount(1);
@@ -452,6 +464,7 @@ test('email field: refuses anything that isn’t a proper address, and says why'
   await page.goto('/');
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   const err = page.locator('[data-field="email"] .field-error');
 
   // empty is fine: copying works
@@ -563,6 +576,7 @@ test('screenshots for design review', async ({ page }) => {
   await page.goto('/');
   await page.fill('#f-name', 'Anastasiia Cherevychna');
   await page.fill('#f-title', 'Designer');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.screenshot({ path: 'test-results/empty-image.png', clip: { x: 600, y: 170, width: 740, height: 480 } });
   await addImage(page, 'image-square.png');
   await page.fill('#f-quoteText', 'Some deep and smart optional quote here');
@@ -572,27 +586,22 @@ test('screenshots for design review', async ({ page }) => {
   await page.screenshot({ path: 'test-results/dark.png', clip: { x: 600, y: 170, width: 740, height: 520 } });
 });
 
-test('CTA colour picker has a hex field that stays in sync', async ({ page }) => {
+test('the CTA button is always there, styled like the Figma button, with "Book a demo" to start', async ({ page }) => {
   await page.goto('/');
-  await page.click('.swatch');
-  const hex = page.locator('.cp-hex');
-  await expect(hex).toBeVisible();
-  await expect(hex).toHaveValue('#CAFC3B');
-  await hex.fill('#1E3A8A');
-  await expect(page.locator('#f-ctaColour')).toHaveValue('#1E3A8A');
-  // dragging in the shade square updates both the hex field and the form
-  const sv = await page.locator('.cp-sv').boundingBox();
-  await page.mouse.click(sv!.x + sv!.width * 0.9, sv!.y + sv!.height * 0.1);
-  const picked = await hex.inputValue();
-  expect(picked).toMatch(/^#[0-9A-F]{6}$/);
-  expect(picked).not.toBe('#1E3A8A');
-  await expect(page.locator('#f-ctaColour')).toHaveValue(picked);
-  await page.locator('.cp').screenshot({ path: 'test-results/picker.png' });
-  await hex.fill('zz');
-  await hex.press('Enter');
-  await expect(page.locator('.cp')).toBeHidden();
-  await expect(page.locator('#f-ctaColour')).toHaveValue(picked);
-  // typing straight into the field still works too
-  await page.fill('#f-ctaColour', '#FE6C23');
-  await expect(page.locator('.swatch')).toHaveCSS('background-color', 'rgb(254, 108, 35)');
+  await expect(page.locator('[data-field="ctaColour"], .swatch')).toHaveCount(0);
+  await expect(page.locator('#f-ctaText')).toHaveValue('Book a demo');
+  await expect(page.locator('label[for="f-ctaText"] .req')).toHaveCount(1); // required
+  await expect(page.locator('label[for="f-ctaLink"] .req')).toHaveCount(1);
+  const btn = page.locator('#previewInner td[bgcolor="#262626"]');
+  await expect(btn).toBeVisible(); // there before anything is filled in
+  await expect(btn).toHaveText('Book a demo');
+  const box = (await btn.boundingBox())!;
+  expect(box.height).toBe(40);
+  const chip = (await btn.locator('img').boundingBox())!;
+  expect([chip.width, chip.height, Math.round(chip.y - box.y), Math.round(box.x + box.width - chip.x - chip.width)]).toEqual([22, 22, 9, 7]);
+  await page.fill('#f-ctaText', 'Talk to us');
+  await expect(btn).toHaveText('Talk to us');
+  await page.fill('#f-ctaText', '');
+  await expect(btn).toHaveText('Book a demo'); // still shown while the field is empty
+  await page.locator('#preview').screenshot({ path: 'test-results/cta.png' });
 });

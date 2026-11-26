@@ -22,7 +22,7 @@ npm run build:preview                            # dist-preview/ (single-file pr
 Commit as "Heights Digital <design@heights.digital>".
 
 ## Decisions already made (with the client, Anastasiia)
-- Form fields and layout follow the Figma frame; labels say "(optional)" except CTA link/colour.
+- Form fields and layout follow the Figma frame; labels say "(optional)" except required fields (marked *).
 - Contact details are a horizontal row of clickable 28 px icons (website, phone → tel, LinkedIn; email was one too until 26 Nov 2026, see below). Only filled-in fields get an icon.
 - Icons: charcoal with a white outline (`icons/<name>.png`) plus solid white versions (`icons/<name>-white.png`) swapped in by a small dark-mode `<style>` block. Gmail strips the style and keeps the outlined ones.
 - Logo (removed 26 Nov 2026, see below): preview showed a grey LOGO placeholder until a logo is uploaded (never copied). Uploaded logos are trimmed and baked onto a white box with an 8 px margin and 4 px corners (PNG), so they stay visible in dark mode. A client can lock a fixed logo via `logo` + `locked: ["logo"]`.
@@ -30,7 +30,8 @@ Commit as "Heights Digital <design@heights.digital>".
 - Image only (26 Nov 2026): the Company logo option is gone, along with the "Company logo / Image" choice and a client's fixed logo (`logo` in a client file, `"logo"` in `locked`). The form has just the optional Image upload, which works exactly as described above; the preview shows an IMAGE placeholder until one is added.
 - Email (one field, Contact & Social links; changed 11 Nov 2026): optional, with an "Email address as icon" switch directly under it, ON by default. On: the address is the clickable envelope icon in the contact row. Off: no icon; the address is written as a line directly under the job title in exactly the title's style (a mailto link with the same font, size and colour and no underline, so email apps don't turn it blue). Only a properly formed address (must contain @ and a domain like name@company.com) is accepted: otherwise the field shows an error ("needs an @" / "looks incomplete") and Copy / Download are held back until it's fixed. The switch is a form setting only (`emailAsIcon` in `FormState`), not a client-config option.
 - No headshot, email always written out (26 Nov 2026): the headshot is gone (upload, crop dialog, "without a headshot" switch and the grey silhouette in the preview), so the signature starts with the name on the left. The "Email address as icon" switch is gone too: a valid address is always written out under the job title, as described above (the old switch-off behaviour). `public/icons/email.png` and `email-white.png` are kept only because signatures copied earlier may still point at them.
-- CTA colour has a custom picker with a HEX field (native picker hid hex in Chrome).
+- CTA colour had a custom picker with a HEX field (removed 26 Nov 2026, see below).
+- CTA button (26 Nov 2026): always in the signature, styled from the CarbonChain Figma button (file `vS6jkpYZRnHZRQa8Cea56e`, node 8354:19380): 40 px tall, `#262626` with 6 px corners, Arial 14 px `#FDFDFC` label in sentence case, then a 22 × 22 grey `#444` arrow chip (`public/icons/cta-arrow.png`, the Figma arrow baked into a 2× PNG because email apps don't show SVG). No colour option any more. CTA text (pre-filled "Book a demo") and CTA link are required, so Copy waits for the link; the preview shows the button from the start. Hover states in Figma don't apply in email.
 - Preview column is sticky on desktop.
 - Light/Dark toggle is a preview of dark mode, not a setting.
 

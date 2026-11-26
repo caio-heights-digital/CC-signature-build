@@ -4,10 +4,9 @@
   "defaults": {
     "website": "https://acme.example",
     "ctaText": "Book a call",
-    "ctaLink": "https://acme.example/contact",
-    "ctaColour": "#1E3A8A"
+    "ctaLink": "https://acme.example/contact"
   },
-  "locked": ["website", "ctaColour"],
+  "locked": ["website"],
   "upload": {
     "provider": "cloudinary",
     "cloudName": "fvkcrpgg",

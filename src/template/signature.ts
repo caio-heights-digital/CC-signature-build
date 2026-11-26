@@ -12,7 +12,7 @@
  *
  * The builder preview renders this exact HTML, so what people see is what they copy.
  */
-import { displayUrl, escapeHtml as esc, normaliseHex, textOn } from './format';
+import { displayUrl, escapeHtml as esc } from './format';
 
 export interface SignatureData {
   name: string;
@@ -27,7 +27,11 @@ export interface SignatureData {
   emailLine?: string;
   phone?: { display: string; href: string };
   linkedin?: string; // full href
-  cta?: { text: string; href: string; colour: string };
+  /**
+   * The CTA button (Figma: CarbonChain button, primary). `href` can be empty in the preview only, before the link is
+   * filled in. `arrow` is the hosted 2× PNG of the grey arrow chip; without it the button is just the label.
+   */
+  cta?: { text: string; href: string; arrow?: string };
   quote?: { text: string; author?: string };
   /**
    * Hosted https PNG icons (56 × 56, shown at 28). `light` is charcoal with a white outline, so it stays
@@ -85,16 +89,28 @@ function contactRow(d: SignatureData): string {
   return `<table ${TABLE} style="border-collapse:collapse;margin-top:10px;"><tr>${cells.join('')}</tr></table>`;
 }
 
+// CTA button, from the Figma component: 40 px tall, #262626 with 6 px corners, Arial 14 px #FDFDFC label
+// (16 px in from the left), then a 22 × 22 arrow chip 10 px after it and 7 px from the right edge.
+export const CTA = { bg: '#262626', text: '#FDFDFC', radius: 6, chip: 22 };
+
 function ctaButton(cta: SignatureData['cta']): string {
   if (!cta) return '';
-  const bg = normaliseHex(cta.colour) || '#CAFC3B';
-  const fg = textOn(bg);
-  // "Bulletproof" button: the coloured cell works in Outlook desktop, the padded link is the click area elsewhere.
+  const link = (inner: string, style: string) =>
+    cta.href ? `<a href="${esc(cta.href)}" style="${style}">${inner}</a>` : `<span style="${style}">${inner}</span>`;
+  // The coloured cell works in Outlook desktop; each part is its own link (a link around a table breaks in Outlook).
+  const label =
+    `<td valign="middle" style="padding:13px ${cta.arrow ? 10 : 16}px 13px 16px;">` +
+    link(esc(cta.text), `display:block;${FONT}font-size:14px;line-height:14px;letter-spacing:0.07px;color:${CTA.text};text-decoration:none;white-space:nowrap;`) +
+    `</td>`;
+  const chip = cta.arrow
+    ? `<td valign="middle" style="padding:9px 7px 9px 0;">` +
+      link(`<img src="${esc(cta.arrow)}" width="${CTA.chip}" height="${CTA.chip}" alt="" style="display:block;width:${CTA.chip}px;height:${CTA.chip}px;border:0;outline:none;">`, 'display:block;text-decoration:none;') +
+      `</td>`
+    : '';
   return (
     `<table ${TABLE} style="border-collapse:separate;margin-top:12px;"><tr>` +
-    `<td bgcolor="${bg}" style="background-color:${bg};border-radius:100px;mso-padding-alt:10px 20px;">` +
-    `<a href="${esc(cta.href)}" style="display:inline-block;padding:10px 20px;${FONT}font-size:14px;line-height:14px;` +
-    `color:${fg};text-decoration:none;text-transform:uppercase;border-radius:100px;">${esc(cta.text)}</a>` +
+    `<td bgcolor="${CTA.bg}" style="background-color:${CTA.bg};border-radius:${CTA.radius}px;padding:0;">` +
+    `<table ${TABLE} style="border-collapse:collapse;"><tr>${label}${chip}</tr></table>` +
     `</td></tr></table>`
   );
 }
@@ -156,7 +172,7 @@ export function buildSignatureText(d: SignatureData): string {
   if (d.emailLine) lines.push(d.emailLine);
   const contact = [d.website && displayUrl(d.website), d.phone?.display, d.linkedin].filter(Boolean);
   if (contact.length) lines.push(contact.join(' | '));
-  if (d.cta) lines.push(`${d.cta.text}: ${d.cta.href}`);
+  if (d.cta?.href) lines.push(`${d.cta.text}: ${d.cta.href}`);
   if (d.quote?.text) lines.push('', `“${d.quote.text}”${d.quote.author ? ` –${d.quote.author}` : ''}`);
   return lines.filter((l) => l !== undefined).join('\n');
 }

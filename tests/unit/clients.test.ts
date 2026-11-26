@@ -12,9 +12,9 @@ describe('client files', () => {
     it(`${id}.json is valid`, () => expect(validateClient(id, cfg)).toEqual([]));
   }
   it('catches common mistakes', () => {
-    const bad = { id: 'x', name: '', locked: ['name', 'nope', 'logo'], defaults: { ctaColour: 'red' } };
+    const bad = { id: 'x', name: '', locked: ['name', 'nope', 'logo', 'ctaColour'] };
     expect(validateClient('y', bad as unknown as ClientConfig)).toHaveLength(6);
-    expect(validateClient('y', bad as unknown as ClientConfig)).toContain('"logo" isn\'t a known field. Use one of: name, title, website, email, phone, linkedin, ctaText, ctaLink, ctaColour, quoteText, quoteAuthor.');
+    expect(validateClient('y', bad as unknown as ClientConfig)).toContain('"logo" isn\'t a known field. Use one of: name, title, website, email, phone, linkedin, ctaText, ctaLink, quoteText, quoteAuthor.');
   });
 });
 

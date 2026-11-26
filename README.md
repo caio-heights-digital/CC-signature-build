@@ -18,12 +18,13 @@ A web tool that lets each client's team make a consistent email signature: fill 
 6. Commit. The client's link is `…/<client-id>`.
 
 Field names you can use in `defaults`, `locked` and `required`:
-`name, title, website, email, phone, linkedin, ctaText, ctaLink, ctaColour, quoteText, quoteAuthor`.
+`name, title, website, email, phone, linkedin, ctaText, ctaLink, quoteText, quoteAuthor`.
+Name, job title, CTA text and CTA link are always required (the CTA button is always in the signature; its text starts as "Book a demo").
 Personal fields (`name`, `title`) can't be locked.
 
-### Changing a client's brand colour or the icons
+### Changing the icons
 
-- Icons: replace the PNGs in `public/icons/` (`<name>.png` for light, `<name>-white.png` for dark mode). Signatures people already use pick up the new files automatically, because they point at that link.
+- Icons: replace the PNGs in `public/icons/` (`<name>.png` for light, `<name>-white.png` for dark mode). The same goes for the CTA button's arrow chip, `public/icons/cta-arrow.png` (44 × 44, shown at 22 × 22). Signatures people already use pick up the new files automatically, because they point at that link.
 - Anything else (colours, text, layout): people need to re-copy their signature. Tell the client.
 
 ### Releasing a change

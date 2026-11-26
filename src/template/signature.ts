@@ -89,7 +89,7 @@ function contactRow(d: SignatureData): string {
   return `<table ${TABLE} style="border-collapse:collapse;margin-top:10px;"><tr>${cells.join('')}</tr></table>`;
 }
 
-// CTA button, from the Figma component: 40 px tall, #262626 with 6 px corners, Arial 14 px #FDFDFC label
+// CTA button, from the Figma component: 40 px tall, #262626 with 6 px corners, #FDFDFC label (Arial 18 px, the job title's size)
 // (16 px in from the left), then a 22 × 22 arrow chip 10 px after it and 7 px from the right edge.
 export const CTA = { bg: '#262626', text: '#FDFDFC', radius: 6, chip: 22 };
 
@@ -99,8 +99,8 @@ function ctaButton(cta: SignatureData['cta']): string {
     cta.href ? `<a href="${esc(cta.href)}" style="${style}">${inner}</a>` : `<span style="${style}">${inner}</span>`;
   // The coloured cell works in Outlook desktop; each part is its own link (a link around a table breaks in Outlook).
   const label =
-    `<td valign="middle" style="padding:13px ${cta.arrow ? 10 : 16}px 13px 16px;">` +
-    link(esc(cta.text), `display:block;${FONT}font-size:14px;line-height:14px;letter-spacing:0.07px;color:${CTA.text};text-decoration:none;white-space:nowrap;`) +
+    `<td valign="middle" style="padding:11px ${cta.arrow ? 10 : 16}px 11px 16px;">` +
+    link(esc(cta.text), `display:block;${FONT}font-size:18px;line-height:18px;letter-spacing:0.07px;color:${CTA.text};text-decoration:none;white-space:nowrap;`) +
     `</td>`;
   const chip = cta.arrow
     ? `<td valign="middle" style="padding:9px 7px 9px 0;">` +

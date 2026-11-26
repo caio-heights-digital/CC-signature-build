@@ -597,6 +597,9 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   await expect(btn).toHaveText('Book a demo');
   const box = (await btn.boundingBox())!;
   expect(box.height).toBe(40);
+  // label is the same size as the job title
+  const size = (el: ReturnType<Page['locator']>) => el.evaluate((e) => getComputedStyle(e).fontSize);
+  expect(await size(btn.locator('span, a').first())).toBe(await size(page.locator('#previewInner div', { hasText: /^Job title$/ }).last()));
   const chip = (await btn.locator('img').boundingBox())!;
   expect([chip.width, chip.height, Math.round(chip.y - box.y), Math.round(box.x + box.width - chip.x - chip.width)]).toEqual([22, 22, 9, 7]);
   await page.fill('#f-ctaText', 'Talk to us');

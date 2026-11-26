@@ -3,8 +3,8 @@
  *
  * This is the fragile part of the product: it has to survive Gmail, Outlook (web, new and classic desktop),
  * Apple Mail and phones. Rules it follows, and that any change must keep:
- *   - tables for layout, every style inline, no classes except the dark-mode icon swap below
- *     (one tiny <style> block; apps that strip it, like Gmail, simply keep the outlined icons)
+ *   - tables for layout, every style inline, no classes except the dark-mode swap below (icons and CTA button;
+ *     one tiny <style> block; apps that strip it, like Gmail, simply keep the light-mode look)
  *   - web-safe fonts only (Arial / Helvetica)
  *   - images are hosted https PNG/JPG with explicit width + height, never SVG or data: URLs
  *   - no opacity or rgba (colours are pre-blended onto white)
@@ -29,9 +29,10 @@ export interface SignatureData {
   linkedin?: string; // full href
   /**
    * The CTA button (Figma: CarbonChain button, primary). `href` can be empty in the preview only, before the link is
-   * filled in. `arrow` is the hosted 2× PNG of the grey arrow chip; without it the button is just the label.
+   * filled in. `arrow` is the hosted 2× PNG of the grey arrow chip, `arrowDark` its dark-mode version (light chip,
+   * dark arrow); without `arrow` the button is just the label.
    */
-  cta?: { text: string; href: string; arrow?: string };
+  cta?: { text: string; href: string; arrow?: string; arrowDark?: string };
   quote?: { text: string; author?: string };
   /**
    * Hosted https PNG icons (56 × 56, shown at 28). `light` is charcoal with a white outline, so it stays
@@ -91,34 +92,48 @@ function contactRow(d: SignatureData): string {
 
 // CTA button, from the Figma component: 44 px tall (13 px above and below the label), #262626 with 6 px corners, #FDFDFC label (Arial 18 px, the job title's size)
 // (16 px in from the left), then a 22 × 22 arrow chip 10 px after it and 7 px from the right edge.
-export const CTA = { bg: '#262626', text: '#FDFDFC', radius: 6, chip: 22 };
+// In dark mode (apps that support it) it takes the Figma dark button's colours: #FAF8F7 with a #262626 label and a
+// #D9DBDC chip; padding and type stay the same.
+export const CTA = { bg: '#262626', text: '#FDFDFC', radius: 6, chip: 22, darkBg: '#FAF8F7', darkText: '#262626' };
 
 function ctaButton(cta: SignatureData['cta']): string {
   if (!cta) return '';
-  const link = (inner: string, style: string) =>
-    cta.href ? `<a href="${esc(cta.href)}" style="${style}">${inner}</a>` : `<span style="${style}">${inner}</span>`;
+  const link = (inner: string, style: string, cls = '') =>
+    cta.href ? `<a${cls} href="${esc(cta.href)}" style="${style}">${inner}</a>` : `<span${cls} style="${style}">${inner}</span>`;
   // The coloured cell works in Outlook desktop; each part is its own link (a link around a table breaks in Outlook).
   const label =
     `<td valign="middle" style="padding:13px ${cta.arrow ? 10 : 16}px 13px 16px;">` +
-    link(esc(cta.text), `display:block;${FONT}font-size:18px;line-height:18px;letter-spacing:0.07px;color:${CTA.text};text-decoration:none;white-space:nowrap;`) +
+    link(esc(cta.text), `display:block;${FONT}font-size:18px;line-height:18px;letter-spacing:0.07px;color:${CTA.text};text-decoration:none;white-space:nowrap;`, ' class="hs-cta-t"') +
     `</td>`;
   const chip = cta.arrow
     ? `<td valign="middle" style="padding:9px 7px 9px 0;">` +
-      link(`<img src="${esc(cta.arrow)}" width="${CTA.chip}" height="${CTA.chip}" alt="" style="display:block;width:${CTA.chip}px;height:${CTA.chip}px;border:0;outline:none;">`, 'display:block;text-decoration:none;') +
+      link(
+        `<img${cta.arrowDark ? ' class="hs-ic-l"' : ''} src="${esc(cta.arrow)}" width="${CTA.chip}" height="${CTA.chip}" alt="" style="display:block;width:${CTA.chip}px;height:${CTA.chip}px;border:0;outline:none;">` +
+          // Hidden unless the email app is in dark mode and understands the <style> below (same as the contact icons).
+          (cta.arrowDark ? `<img class="hs-ic-d" src="${esc(cta.arrowDark)}" width="${CTA.chip}" height="${CTA.chip}" alt="" style="width:${CTA.chip}px;height:${CTA.chip}px;border:0;outline:none;display:none;max-height:0;overflow:hidden;mso-hide:all;">` : ''),
+        'display:block;text-decoration:none;',
+      ) +
       `</td>`
     : '';
   return (
     `<table ${TABLE} style="border-collapse:separate;margin-top:14px;"><tr>` + // 14 px below the name, title, email and icons
-    `<td bgcolor="${CTA.bg}" style="background-color:${CTA.bg};border-radius:${CTA.radius}px;padding:0;">` +
+    `<td class="hs-cta" bgcolor="${CTA.bg}" style="background-color:${CTA.bg};border-radius:${CTA.radius}px;padding:0;">` +
     `<table ${TABLE} style="border-collapse:collapse;"><tr>${label}${chip}</tr></table>` +
     `</td></tr></table>`
   );
 }
 
-/** Swaps to the solid white icons in dark mode (Apple Mail, iPhone Mail, Outlook.com and the Outlook apps). */
+/**
+ * Dark mode (Apple Mail, iPhone Mail, Outlook.com and the Outlook apps): swaps to the white contact icons and gives
+ * the CTA button the Figma dark colours. Outlook marks dark mode with [data-ogsc] (text) and [data-ogsb] (backgrounds).
+ */
+const DARK_RULES =
+  '.hs-ic-l{display:none!important}.hs-ic-d{display:block!important;max-height:none!important}' +
+  `.hs-cta{background-color:${CTA.darkBg}!important}.hs-cta-t{color:${CTA.darkText}!important}`;
 const DARK_STYLE =
-  '<style>@media (prefers-color-scheme:dark){.hs-ic-l{display:none!important}.hs-ic-d{display:block!important;max-height:none!important}}' +
-  '[data-ogsc] .hs-ic-l{display:none!important}[data-ogsc] .hs-ic-d{display:block!important;max-height:none!important}</style>';
+  `<style>@media (prefers-color-scheme:dark){${DARK_RULES}}` +
+  '[data-ogsc] .hs-ic-l{display:none!important}[data-ogsc] .hs-ic-d{display:block!important;max-height:none!important}' +
+  `[data-ogsb] .hs-cta{background-color:${CTA.darkBg}!important}[data-ogsc] .hs-cta-t{color:${CTA.darkText}!important}</style>`;
 
 export function buildSignatureHtml(d: SignatureData): string {
   const name = esc(d.name);
@@ -158,7 +173,7 @@ export function buildSignatureHtml(d: SignatureData): string {
       `</td></tr>`
     : '';
 
-  const usesDarkIcons = Object.values(d.icons ?? {}).some((i) => i?.dark) && /hs-ic-d/.test(top);
+  const usesDarkIcons = /hs-ic-d|hs-cta/.test(top); // only when there's something for dark mode to change
   return (
     (usesDarkIcons ? DARK_STYLE : '') +
     `<table ${TABLE} width="100%" style="border-collapse:collapse;width:100%;max-width:652px;${FONT}">` +

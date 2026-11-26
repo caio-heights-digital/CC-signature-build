@@ -220,7 +220,7 @@ test('image option: an image shorter than 128 px tall is shown at its own height
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   const html = await clipboardHtml(page);
   expect(html).toContain(`<img src="${HOSTED}" width="128" height="38"`);
-  expect(html).toContain('width:128px;height:38px;border:0;outline:none;');
+  expect(html).toMatch(/width:\s?128px;\s?height:\s?38px;/); // Chrome may reformat the copied styles (adds spaces)
 });
 
 test('image option: a GIF is accepted, kept animated, and uploaded exactly as it was', async ({ page }) => {
@@ -503,7 +503,7 @@ test('icons turn solid white in the dark preview', async ({ page }) => {
   await page.goto('/');
   await page.fill('#f-phone', '+351 912 345 678');
   await expect(page.locator('#previewInner .hs-ic-l[src$="icons/v2/phone.png"]')).toBeVisible();
-  await expect(page.locator('#previewInner .hs-ic-d')).toHaveCount(2); // phone + default website
+  await expect(page.locator('#previewInner a[title] .hs-ic-d')).toHaveCount(2); // phone + default website (contact row only)
   await expect(page.locator('#previewInner .hs-ic-d').first()).toBeHidden();
   await page.click('[data-theme-btn="dark"]');
   await expect(page.locator('#previewInner .hs-ic-d[src$="icons/v2/phone-white.png"]')).toBeVisible();
@@ -514,11 +514,11 @@ test('contact icons appear as fields are filled in, and each links to the right 
   await page.goto('/');
   const icon = (k: string) => page.locator(`#previewInner a:has(img.hs-ic-l[src$="icons/v2/${k}.png"])`);
   await page.fill('#f-website', '');
-  await expect(page.locator('#previewInner img.hs-ic-l')).toHaveCount(0);
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0);
   await page.fill('#f-email', 'jane@company.com');
-  await expect(page.locator('#previewInner img.hs-ic-l')).toHaveCount(0); // the email is written out, not an icon
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0); // the email is written out, not an icon
   await page.fill('#f-website', 'company.com');
-  await expect(page.locator('#previewInner img.hs-ic-l')).toHaveCount(1);
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(1);
   await page.fill('#f-phone', '+351 912 345 678');
   await page.fill('#f-linkedin', 'linkedin.com/in/jane');
   await expect(icon('website')).toHaveAttribute('href', 'https://company.com/');
@@ -601,14 +601,14 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   const gapAbove = () => btn.evaluate((td) => { const t = td.closest('table')!; const p = t.previousElementSibling as HTMLElement; const last = [...p.querySelectorAll('img.hs-ic-l')].pop() ?? p; return Math.round(t.getBoundingClientRect().top - last.getBoundingClientRect().bottom); });
   await expect.poll(gapAbove).toBe(14);
   await page.fill('#f-website', '');
-  await expect(page.locator('#previewInner img.hs-ic-l')).toHaveCount(0); // preview redrawn without icons
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0); // preview redrawn without contact icons
   await expect.poll(gapAbove).toBe(14);
   await page.fill('#f-website', 'heights.digital');
   // label is the same size as the job title
   const size = (el: ReturnType<Page['locator']>) => el.evaluate((e) => getComputedStyle(e).fontSize);
-  await expect(page.locator('#previewInner img.hs-ic-l')).toHaveCount(1); // preview redrawn with the website icon again
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(1); // preview redrawn with the website icon again
   await expect.poll(async () => [await size(btn.locator('span, a').first()), await size(page.locator('#previewInner div', { hasText: /^Job title$/ }).last())]).toEqual(['18px', '18px']);
-  const chip = (await btn.locator('img').boundingBox())!;
+  const chip = (await btn.locator('img.hs-ic-l').boundingBox())!;
   expect([chip.width, chip.height, Math.round(chip.y - box.y), Math.round(box.x + box.width - chip.x - chip.width)]).toEqual([22, 22, 11, 7]); // chip centred top to bottom, 7 px from the right
   await page.fill('#f-ctaText', 'Talk to us');
   await expect(btn).toHaveText('Talk to us');
@@ -622,14 +622,19 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   expect(await inversions(btn)).toBe(0);
   await page.click('[data-theme-btn="dark"]');
   expect(await inversions(btn)).toBe(0);
-  expect(await inversions(btn.locator('img'))).toBe(0);
+  expect(await inversions(btn.locator('img.hs-ic-d'))).toBe(0);
   expect(await inversions(page.locator('#previewInner div', { hasText: /^Job title$/ }).last())).toBe(1); // the rest is still inverted
+  // ...and shows the Figma dark button: light background, dark label, light chip
+  expect(await btn.evaluate((td) => getComputedStyle(td).backgroundColor)).toBe('rgb(250, 248, 247)');
+  expect(await btn.locator('.hs-cta-t').evaluate((t) => getComputedStyle(t).color)).toBe('rgb(38, 38, 38)');
+  await expect(btn.locator('img.hs-ic-d[src$="icons/cta-arrow-dark.png"]')).toBeVisible();
+  await expect(btn.locator('img.hs-ic-l')).toBeHidden();
   await page.locator('#preview').screenshot({ path: 'test-results/cta-dark.png' });
 });
 
 test('serves the new icons, and still serves every original icon that earlier signatures point at', async ({ request }) => {
   const files = ['website', 'phone', 'linkedin'].flatMap((k) => [`/icons/v2/${k}.png`, `/icons/v2/${k}-white.png`, `/icons/${k}.png`, `/icons/${k}-white.png`]);
-  for (const f of [...files, '/icons/email.png', '/icons/email-white.png', '/icons/cta-arrow.png']) {
+  for (const f of [...files, '/icons/email.png', '/icons/email-white.png', '/icons/cta-arrow.png', '/icons/cta-arrow-dark.png']) {
     const r = await request.get(f);
     expect(r.status(), f).toBe(200);
     expect(r.headers()['content-type'], f).toContain('image/png');

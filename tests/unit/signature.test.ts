@@ -10,7 +10,7 @@ const full: SignatureData = {
   emailLine: 'name@heights.digital',
   phone: { display: '+351 912 345 678', href: 'tel:+351912345678' },
   linkedin: 'https://linkedin.com/in/someone',
-  cta: { text: 'Book a call', href: 'https://calendly.com/x', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png' },
+  cta: { text: 'Book a call', href: 'https://calendly.com/x', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png', arrowDark: 'https://signatures.heights.digital/icons/cta-arrow-dark.png' },
   quote: { text: 'The best agency we’ve worked with.', author: 'Sarah Lee, Acme Ltd' },
   icons: {
     website: { light: 'https://signatures.heights.digital/icons/v2/website.png', dark: 'https://signatures.heights.digital/icons/v2/website-white.png' },
@@ -28,18 +28,18 @@ describe('signature HTML is email-safe', () => {
   it('uses no SVG, data URLs, rgba or opacity, and only the one dark-mode style block', () => {
     expect(html).not.toMatch(/<svg|data:|rgba\(|opacity/i);
     expect(html.match(/<style/g)).toHaveLength(1);
-    expect([...html.matchAll(/class="([^"]+)"/g)].map((m) => m[1]).every((c) => c === 'hs-ic-l' || c === 'hs-ic-d')).toBe(true);
+    expect([...html.matchAll(/class="([^"]+)"/g)].map((m) => m[1]).every((c) => ['hs-ic-l', 'hs-ic-d', 'hs-cta', 'hs-cta-t'].includes(c))).toBe(true);
   });
   it('hides the white icons unless the app is in dark mode (so Gmail, which strips the style, shows the outlined ones)', () => {
     const dark = html.match(/<img class="hs-ic-d"[^>]+>/g)!;
-    expect(dark).toHaveLength(3);
+    expect(dark).toHaveLength(4); // 3 contact icons + the CTA chip
     for (const i of dark) expect(i).toMatch(/display:none;max-height:0;overflow:hidden;mso-hide:all;/);
     expect(html).toContain('@media (prefers-color-scheme:dark){.hs-ic-l{display:none!important}');
     expect(buildSignatureHtml({ name: 'J', title: 'T' })).not.toContain('<style');
   });
   it('gives every image explicit width and height', () => {
     const imgs = html.match(/<img [^>]+>/g)!;
-    expect(imgs).toHaveLength(8); // image, 3 contact icons × light and dark, the CTA arrow chip
+    expect(imgs).toHaveLength(9); // image, 3 contact icons and the CTA arrow chip × light and dark
     for (const img of imgs) expect(img).toMatch(/width="\d+" height="\d+"/);
   });
   it('includes every filled-in part', () => {
@@ -85,11 +85,20 @@ describe('signature HTML is email-safe', () => {
     expect(h).toContain('–Sam');
   });
   it('draws the CTA button like the Figma component', () => {
-    const cell = html.match(/<td bgcolor="#262626" style="([^"]+)">/)![1];
+    const cell = html.match(/<td class="hs-cta" bgcolor="#262626" style="([^"]+)">/)![1];
     expect(cell).toBe('background-color:#262626;border-radius:6px;padding:0;'); // dark, 6 px corners
-    expect(html).toContain('<td valign="middle" style="padding:13px 10px 13px 16px;"><a href="https://calendly.com/x" style="display:block;font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:18px;letter-spacing:0.07px;color:#FDFDFC;text-decoration:none;white-space:nowrap;">Book a call</a></td>');
-    expect(html).toContain('<td valign="middle" style="padding:9px 7px 9px 0;"><a href="https://calendly.com/x" style="display:block;text-decoration:none;"><img src="https://signatures.heights.digital/icons/cta-arrow.png" width="22" height="22" alt=""');
+    expect(html).toContain('<td valign="middle" style="padding:13px 10px 13px 16px;"><a class="hs-cta-t" href="https://calendly.com/x" style="display:block;font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:18px;letter-spacing:0.07px;color:#FDFDFC;text-decoration:none;white-space:nowrap;">Book a call</a></td>');
+    expect(html).toContain('<td valign="middle" style="padding:9px 7px 9px 0;"><a href="https://calendly.com/x" style="display:block;text-decoration:none;"><img class="hs-ic-l" src="https://signatures.heights.digital/icons/cta-arrow.png" width="22" height="22" alt=""');
+    expect(html).toContain('<img class="hs-ic-d" src="https://signatures.heights.digital/icons/cta-arrow-dark.png" width="22" height="22" alt="" style="width:22px;height:22px;border:0;outline:none;display:none;max-height:0;overflow:hidden;mso-hide:all;">');
     expect(html).not.toMatch(/text-transform:uppercase/); // sentence case, as in Figma
+  });
+  it('switches the CTA button to the Figma dark colours in apps that support dark mode (Gmail keeps the dark button)', () => {
+    expect(html).toContain('@media (prefers-color-scheme:dark){');
+    expect(html).toContain('.hs-cta{background-color:#FAF8F7!important}.hs-cta-t{color:#262626!important}');
+    expect(html).toContain('[data-ogsb] .hs-cta{background-color:#FAF8F7!important}[data-ogsc] .hs-cta-t{color:#262626!important}');
+    // only one style block, and none at all when there's nothing for dark mode to change
+    expect(html.match(/<style/g)).toHaveLength(1);
+    expect(buildSignatureHtml({ name: 'J', title: 'T' })).not.toContain('<style');
   });
   it('keeps the button without the arrow chip when the chip image isn’t available', () => {
     const h = buildSignatureHtml({ ...full, cta: { text: 'Book a call', href: 'https://calendly.com/x' } });

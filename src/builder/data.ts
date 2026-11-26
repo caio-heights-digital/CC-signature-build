@@ -49,7 +49,8 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
   // The CTA button is always there. Both fields are required, so copying waits until they're filled in;
   // until then the preview shows the default text and a button that doesn't go anywhere yet.
   const arrow = resolve(CTA_ARROW_PATH);
-  d.cta = { text: v('ctaText') || CTA_TEXT, href: ctaHref, ...(purpose === 'preview' || isPublic(arrow) ? { arrow } : {}) };
+  const chips = purpose === 'preview' || isPublic(arrow) ? { arrow, arrowDark: resolve(CTA_ARROW_DARK_PATH) } : {};
+  d.cta = { text: v('ctaText') || CTA_TEXT, href: ctaHref, ...chips };
 
   if (v('quoteText')) d.quote = { text: v('quoteText'), author: v('quoteAuthor') || undefined };
 
@@ -66,6 +67,8 @@ export const ICON_KEYS: IconKey[] = ['website', 'phone', 'linkedin'];
 /** Icons live on this site at a fixed link, so they can be redesigned without anyone re-copying. */
 /** The grey arrow chip on the CTA button (Figma's button, 2× PNG). On this site, like the icons. */
 export const CTA_ARROW_PATH = '/icons/cta-arrow.png';
+/** Its dark-mode version (Figma dark button: #D9DBDC chip, #262626 arrow). */
+export const CTA_ARROW_DARK_PATH = '/icons/cta-arrow-dark.png';
 /**
  * Contact icons (CarbonChain Figma set, 26 Nov 2026): v2 folder, so signatures copied before then keep the
  * original icons in /icons/. Light = #444444 with a 1 px white outline (Gmail keeps it in dark mode); dark = #FDFDFC.

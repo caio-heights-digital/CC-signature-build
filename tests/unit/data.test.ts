@@ -28,7 +28,7 @@ describe('form → signature data', () => {
     const blankCta = toSignatureData(form(), client, 'preview', live).cta!;
     expect([blankCta.text, blankCta.href]).toEqual(['Book a demo', '']); // shown in the preview even before the link is added
     const d = toSignatureData(form({ values: { ...blank(), name: 'J', title: 'T', ctaText: 'Book a call', ctaLink: 'cal.com/j' } }), client, 'email', live);
-    expect(d.cta).toEqual({ text: 'Book a call', href: 'https://cal.com/j', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png' });
+    expect(d.cta).toEqual({ text: 'Book a call', href: 'https://cal.com/j', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png', arrowDark: 'https://signatures.heights.digital/icons/cta-arrow-dark.png' });
   });
   it('leaves the arrow chip out of the email on a local machine, and says so', () => {
     expect(toSignatureData(form(), client, 'email', local).cta?.arrow).toBeUndefined();

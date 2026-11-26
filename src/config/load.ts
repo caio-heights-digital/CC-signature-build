@@ -6,8 +6,8 @@ const files = import.meta.glob<ClientConfig>('../../clients/*.json', { eager: tr
 export const DEFAULT_CLIENT = 'heights';
 
 const ALL_FIELDS: FieldKey[] = [
-  'name', 'title', 'headshot', 'website', 'email', 'phone', 'linkedin',
-  'ctaText', 'ctaLink', 'ctaColour', 'quoteText', 'quoteAuthor',
+  'name', 'title', 'website', 'email', 'phone', 'linkedin',
+  'ctaText', 'ctaLink', 'quoteText', 'quoteAuthor',
 ];
 
 export function allClients(): Record<string, ClientConfig> {
@@ -28,10 +28,8 @@ export function validateClient(id: string, cfg: ClientConfig): string[] {
     if (!ALL_FIELDS.includes(f)) p.push(`"${f}" isn't a known field. Use one of: ${ALL_FIELDS.join(', ')}.`);
   }
   for (const f of cfg.locked ?? []) {
-    if (f === 'name' || f === 'title' || f === 'headshot') p.push(`"${f}" is personal and can't be locked.`);
+    if (f === 'name' || f === 'title') p.push(`"${f}" is personal and can't be locked.`);
   }
-  const colour = cfg.defaults?.ctaColour;
-  if (colour && !/^#[0-9a-f]{6}$/i.test(colour)) p.push(`CTA colour "${colour}" should look like #1A2B3C.`);
   if (cfg.upload && (!cfg.upload.cloudName || !cfg.upload.uploadPreset)) p.push('"upload" needs both cloudName and uploadPreset.');
   return p;
 }

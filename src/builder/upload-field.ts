@@ -1,4 +1,4 @@
-/** Wires one upload box (headshot or image): drag & drop, browse, progress, done state, errors. */
+/** Wires an upload box (the image): drag & drop, browse, progress, done state, errors. */
 import { multipleFiles, nothingDropped, type Problem } from '../image/check';
 
 type State = 'empty' | 'working' | 'done';
@@ -8,11 +8,10 @@ export interface UploadField {
   progress(text: string, pct: number): void;
   done(thumb: string, fileName: string): void;
   error(p: Problem | null): void;
-  setDisabled(off: boolean): void;
   root: HTMLElement;
 }
 
-export function createUploadField(root: HTMLElement, onFile: (f: File) => void, handlers: { remove: () => void; recrop?: () => void }): UploadField {
+export function createUploadField(root: HTMLElement, onFile: (f: File) => void, handlers: { remove: () => void }): UploadField {
   const q = <T extends HTMLElement>(s: string) => root.querySelector(s) as T;
   const drop = q<HTMLDivElement>('[data-state="empty"]');
   const working = q<HTMLDivElement>('[data-state="working"]');
@@ -27,7 +26,6 @@ export function createUploadField(root: HTMLElement, onFile: (f: File) => void, 
     if (f) onFile(f);
   });
   q<HTMLButtonElement>('[data-remove]').addEventListener('click', handlers.remove);
-  root.querySelector<HTMLButtonElement>('[data-recrop]')?.addEventListener('click', () => handlers.recrop?.());
 
   const over = (on: boolean) => drop.classList.toggle('over', on);
   drop.addEventListener('dragenter', (e) => { e.preventDefault(); over(true); });
@@ -67,12 +65,6 @@ export function createUploadField(root: HTMLElement, onFile: (f: File) => void, 
       const b = document.createElement('span');
       b.textContent = p.fix;
       err.append(a, b);
-    },
-    setDisabled(off) {
-      [drop, working, done].forEach((el) => el.classList.toggle('off', off));
-      root.querySelector('.label .req')?.toggleAttribute('hidden', off);
-      drop.style.display = working.style.display = done.style.display = off ? 'none' : '';
-      if (off) api.error(null);
     },
   };
   return api;

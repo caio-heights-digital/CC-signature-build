@@ -2,8 +2,7 @@
   "id": "heights",
   "name": "Heights Digital",
   "defaults": {
-    "website": "https://heights.digital",
-    "ctaColour": "#CAFC3B"
+    "website": "https://heights.digital"
   },
   "locked": [],
   "upload": {

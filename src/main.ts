@@ -5,19 +5,16 @@ import { ALWAYS_REQUIRED, FIELDS, type TextKey } from './builder/fields';
 import { missingFromEmail, toSignatureData, type FormState } from './builder/data';
 import { createUploadField } from './builder/upload-field';
 import { saveFile } from './builder/save-file';
-import { attachColourPicker } from './builder/colour-picker';
-import { damaged, gifSizeProblem, headshotDimensionProblem, imageDimensionProblem, imageDisplaySize } from './image/check';
+import { damaged, gifSizeProblem, imageDimensionProblem, imageDisplaySize } from './image/check';
 import { gifFitsAsIs, gifSizesToTry, resizeGif } from './image/gif';
-import { createCropper, type CropState } from './image/crop';
-import { blobToDataUrl, loadImageFile, renderHeadshot, renderImage, toJpeg, toPng, type LoadedImage } from './image/process';
+import { blobToDataUrl, loadImageFile, renderImage, toPng } from './image/process';
 import { UploadError, uploadImage } from './upload/cloudinary';
-import { normaliseHex } from './template/format';
 import { buildSignatureDocument, buildSignatureHtml, buildSignatureText } from './template/signature';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Preview builds (a single shareable HTML file) can't reach the photo service. */
+/** Preview builds (a single shareable HTML file) can't reach the image service. */
 const PREVIEW_BUILD = import.meta.env.MODE === 'preview';
 
 // ---------------------------------------------------------------- client
@@ -51,14 +48,11 @@ function start(cfg: ClientConfig) {
   const locked = new Set<FieldKey>(cfg.locked ?? []);
   const required = new Set<FieldKey>([...ALWAYS_REQUIRED, ...(cfg.required ?? [])]);
   const upload = PREVIEW_BUILD ? undefined : cfg.upload;
-  if (PREVIEW_BUILD) showBanner('Preview version: photos and images aren’t uploaded here, so they’re left out when you copy. Everything else works as it will on the live link.');
-  else if (!upload) showBanner('Photo hosting isn’t set up for this link yet, so photos and images are left out when you copy.', true);
+  if (PREVIEW_BUILD) showBanner('Preview version: images aren’t uploaded here, so they’re left out when you copy. Everything else works as it will on the live link.');
+  else if (!upload) showBanner('Image hosting isn’t set up for this link yet, so images are left out when you copy.', true);
 
   const state: FormState = {
-    values: Object.fromEntries(FIELDS.map((f) => [f.key, cfg.defaults?.[f.key] ?? ''])) as Record<TextKey, string>,
-    noHeadshot: false,
-    emailAsIcon: true, // as before: an envelope icon
-    headshot: null,
+    values: Object.fromEntries(FIELDS.map((f) => [f.key, cfg.defaults?.[f.key] ?? f.initial ?? ''])) as Record<TextKey, string>,
     image: null,
   };
   const touched = new Set<TextKey>();
@@ -81,7 +75,7 @@ function start(cfg: ClientConfig) {
       r.textContent = '*';
       r.setAttribute('aria-hidden', 'true');
       label.append(r);
-    } else if (f.key !== 'ctaLink' && f.key !== 'ctaColour') {
+    } else {
       label.append(' (optional)');
     }
     const row = document.createElement('div');
@@ -99,36 +93,8 @@ function start(cfg: ClientConfig) {
     err.id = `${id}-err`;
     input.setAttribute('aria-describedby', err.id);
 
-    if (f.key === 'ctaColour') {
-      const sw = document.createElement('button');
-      sw.type = 'button';
-      sw.className = 'swatch';
-      sw.setAttribute('aria-label', 'Pick CTA colour');
-      row.classList.add('has-picker');
-      row.append(sw);
-      const syncSwatch = () => { sw.style.background = normaliseHex(input.value) || '#CAFC3B'; };
-      attachColourPicker(sw, () => input.value, (hex) => { input.value = hex; input.dispatchEvent(new Event('input')); });
-      input.addEventListener('input', syncSwatch);
-      syncSwatch();
-    }
     row.append(input);
     wrap.append(label, row, err);
-    if (f.key === 'ctaColour') {
-      const hint = document.createElement('p');
-      hint.className = 'hint';
-      hint.textContent = 'Type a hex code, or tap the swatch to pick a colour. Button text switches to black or white automatically for contrast.';
-      wrap.append(hint);
-    }
-    if (f.key === 'email') {
-      // Icon, or written under the job title: a switch right below the email field.
-      const t = document.createElement('label');
-      t.className = 'toggle toggle-below';
-      t.innerHTML = '<input type="checkbox" id="emailAsIcon" checked><span class="switch" aria-hidden="true"></span>Email address as icon';
-      const cb = t.querySelector('input')!;
-      cb.checked = state.emailAsIcon;
-      cb.addEventListener('change', () => { state.emailAsIcon = cb.checked; schedule(); });
-      wrap.append(t);
-    }
     if (locked.has(f.key)) wrap.hidden = true;
     host.append(wrap);
     inputs[f.key] = input;
@@ -166,46 +132,7 @@ function start(cfg: ClientConfig) {
     errorEls[k].closest('.field')!.classList.toggle('invalid', !!p);
   }
 
-  // ---------- headshot
-  const cropper = createCropper($<HTMLDialogElement>('cropDialog'));
-  let hsSource: LoadedImage | null = null;
-  let hsCrop: CropState | null = null;
-  const busy = { headshot: false, image: false };
-
-  const hsField = createUploadField($('headshotField'), (f) => void addHeadshot(f), {
-    remove: () => { state.headshot = null; hsSource = null; hsCrop = null; hsField.show('empty'); hsField.error(null); schedule(); },
-    recrop: () => { if (hsSource) void cropAndHost(hsSource); },
-  });
-
-  async function addHeadshot(file: File) {
-    hsField.error(null);
-    const r = await loadImageFile(file);
-    if (!r.ok) return hsField.error(r.problem);
-    const dim = headshotDimensionProblem(r.value.w, r.value.h);
-    if (dim) return hsField.error(dim);
-    hsCrop = null;
-    await cropAndHost(r.value);
-  }
-
-  async function cropAndHost(src: LoadedImage) {
-    const result = await cropper.open(src, hsCrop);
-    if (!result) return; // cancelled: keep whatever was there before
-    hsSource = src;
-    hsCrop = result.norm;
-    busy.headshot = true;
-    hsField.progress('Cropping and resizing…', 30);
-    const canvas = renderHeadshot(src.img, result.rect.sx, result.rect.sy, result.rect.side);
-    const preview = canvas.toDataURL('image/jpeg', 0.9);
-    await wait(150);
-    hsField.progress('Removing location data…', 55);
-    const blob = await toJpeg(canvas);
-    const hosted = await host(blob, 'headshot.jpg', hsField);
-    busy.headshot = false;
-    if (hosted === false) { state.headshot = null; hsField.show('empty'); schedule(); return; }
-    state.headshot = { preview, hosted: hosted || undefined };
-    hsField.done(preview, src.name);
-    schedule();
-  }
+  const busy = { image: false };
 
   /** Uploads if hosting is set up. Returns the URL, '' when hosting is off, or false on failure. */
   async function host(blob: Blob, name: string, field: ReturnType<typeof createUploadField>): Promise<string | false> {
@@ -221,13 +148,6 @@ function start(cfg: ClientConfig) {
       return false;
     }
   }
-
-  const noHs = $<HTMLInputElement>('noHeadshot');
-  noHs.addEventListener('change', () => {
-    state.noHeadshot = noHs.checked;
-    hsField.setDisabled(noHs.checked);
-    schedule();
-  });
 
   // ---------- 128 × 128 image
   const imageField = createUploadField($('imageField'), (f) => void addImage(f), {
@@ -295,11 +215,6 @@ function start(cfg: ClientConfig) {
     const d = toSignatureData(state, cfg, 'preview', resolveAsset);
     // The preview's Light/Dark switch decides the look, not the viewer's own system setting.
     let html = buildSignatureHtml(d).replace(/<style>[\s\S]*?<\/style>/, '');
-    // Placeholder silhouette until a photo is added (preview only, never copied).
-    if (!d.photo && !state.noHeadshot) {
-      const ph = `<td valign="top" width="105" style="padding:0 20px 0 0;"><svg class="ph-photo" width="105" height="105" viewBox="0 0 105 105" aria-hidden="true"><rect width="105" height="105" fill="#E1E1E1"/><circle cx="52.5" cy="38" r="17" fill="#A3A3A3"/><ellipse cx="52.5" cy="84" rx="33" ry="19" fill="#A3A3A3"/></svg></td>`;
-      html = html.replace('<tr><td valign="top" style="padding:0;', `<tr>${ph}<td valign="top" style="padding:0;`);
-    }
     previewInner.innerHTML = html;
   }
   renderPreview();
@@ -318,13 +233,11 @@ function start(cfg: ClientConfig) {
   function readyForEmail(): boolean {
     for (const k of FIELDS.map((f) => f.key)) touched.add(k);
     const bad = FIELDS.filter((f) => !locked.has(f.key) && !validateField(f.key));
-    const missingPhoto = !state.noHeadshot && !state.headshot && required.has('headshot');
-    if (busy.headshot || busy.image) { say('Wait a moment, your image is still uploading.', false); return false; }
-    if (missingPhoto) hsField.error({ what: 'Add a photo, or turn on “I want a signature without a headshot”.', fix: 'JPG or PNG, square works best.' });
-    if (bad.length || missingPhoto) {
-      const names = [...bad.map((f) => f.label.toLowerCase()), ...(missingPhoto ? ['headshot'] : [])];
+    if (busy.image) { say('Wait a moment, your image is still uploading.', false); return false; }
+    if (bad.length) {
+      const names = bad.map((f) => f.label.toLowerCase());
       say(`Check ${names.length === 1 ? 'this field' : 'these fields'} first: ${names.join(', ')}.`, false);
-      const first = bad[0] ? inputs[bad[0].key] : $('headshotField');
+      const first = inputs[bad[0].key];
       first.scrollIntoView({ behavior: 'smooth', block: 'center' });
       if (first instanceof HTMLInputElement) first.focus({ preventScroll: true });
       return false;
@@ -336,12 +249,11 @@ function start(cfg: ClientConfig) {
     const missing = missingFromEmail(state, resolveAsset);
     if (!missing.length) return [`${prefix} Now follow “How to install” below.`, true];
     const notes: string[] = [];
-    const yours = missing.filter((m) => m === 'photo' || m === 'image');
-    if (yours.length) {
-      const why = PREVIEW_BUILD ? 'images aren’t hosted in this preview' : !upload ? 'photo hosting isn’t set up for this link' : 'it didn’t upload. Try adding it again';
-      notes.push(`Your ${yours.join(' and ')} ${yours.length > 1 ? 'were' : 'was'} left out because ${why}.`);
+    if (missing.includes('image')) {
+      const why = PREVIEW_BUILD ? 'images aren’t hosted in this preview' : !upload ? 'image hosting isn’t set up for this link' : 'it didn’t upload. Try adding it again';
+      notes.push(`Your image was left out because ${why}.`);
     }
-    if (missing.includes('icons')) notes.push(`The contact icons were left out because this page isn’t on a public link yet (they’ll be included once the tool is live).`);
+    if (missing.includes('icons')) notes.push(`The icons were left out because this page isn’t on a public link yet (they’ll be included once the tool is live).`);
     return [`${prefix} ${notes.join(' ')}`, false];
   }
 

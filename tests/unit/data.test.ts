@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { missingFromEmail, toSignatureData, type FormState } from '../../src/builder/data';
+import { ICON_PATH, missingFromEmail, toSignatureData, type FormState } from '../../src/builder/data';
 import { FIELDS, type TextKey } from '../../src/builder/fields';
 import { buildSignatureHtml } from '../../src/template/signature';
 import { isEmail } from '../../src/template/format';
@@ -11,39 +11,29 @@ const live = (src: string) => new URL(src, 'https://signatures.heights.digital/'
 const local = (src: string) => new URL(src, 'http://localhost:5173/').href;
 
 function form(over: Partial<FormState> = {}): FormState {
-  return { values: { ...blank(), name: 'Jane', title: 'CTO' }, noHeadshot: false, emailAsIcon: true, headshot: null, image: null, ...over };
+  return { values: { ...blank(), name: 'Jane', title: 'CTO' }, image: null, ...over };
 }
 
 describe('form → signature data', () => {
-  it('preview uses the local photo, email uses only the hosted one', () => {
-    const s = form({ headshot: { preview: 'data:image/jpeg;base64,xx', hosted: 'https://res.cloudinary.com/a.jpg' } });
-    expect(toSignatureData(s, client, 'preview', live).photo?.src).toMatch(/^data:/);
-    expect(toSignatureData(s, client, 'email', live).photo?.src).toBe('https://res.cloudinary.com/a.jpg');
-  });
-  it('leaves an un-hosted photo out of the email and says so', () => {
-    const s = form({ headshot: { preview: 'data:image/jpeg;base64,xx' } });
-    expect(toSignatureData(s, client, 'email', live).photo).toBeUndefined();
-    expect(missingFromEmail(s, live)).toEqual(['photo']);
-  });
-  it('drops the photo when "without a headshot" is on', () => {
-    const s = form({ noHeadshot: true, headshot: { preview: 'data:x', hosted: 'https://h/a.jpg' } });
-    expect(toSignatureData(s, client, 'email', live).photo).toBeUndefined();
-    expect(missingFromEmail(s, live)).toEqual([]);
-  });
   it('icons are full public links on the live site, and left out (and reported) on a local machine', () => {
-    const values = { ...blank(), name: 'J', title: 'T', email: 'j@x.com' };
-    expect(toSignatureData(form({ values }), client, 'email', live).icons?.email).toEqual({
-      light: 'https://signatures.heights.digital/icons/email.png',
-      dark: 'https://signatures.heights.digital/icons/email-white.png',
+    const values = { ...blank(), name: 'J', title: 'T', website: 'x.com' };
+    expect(toSignatureData(form({ values }), client, 'email', live).icons?.website).toEqual({
+      light: 'https://signatures.heights.digital/icons/v2/website.png',
+      dark: 'https://signatures.heights.digital/icons/v2/website-white.png',
     });
     expect(toSignatureData(form({ values }), client, 'email', local).icons).toEqual({});
     expect(missingFromEmail(form({ values }), local)).toContain('icons');
   });
-  it('only adds a CTA when it has both text and a working link', () => {
-    const v = { ...blank(), name: 'J', title: 'T', ctaText: 'Book a call' };
-    expect(toSignatureData(form({ values: v }), client, 'email', live).cta).toBeUndefined();
-    const d = toSignatureData(form({ values: { ...v, ctaLink: 'cal.com/j', ctaColour: 'abc' } }), client, 'email', live);
-    expect(d.cta).toEqual({ text: 'Book a call', href: 'https://cal.com/j', colour: '#AABBCC' });
+  it('always has the CTA button: "Book a demo" until text is typed, and the link once there is one', () => {
+    const blankCta = toSignatureData(form(), client, 'preview', live).cta!;
+    expect([blankCta.text, blankCta.href]).toEqual(['Book a demo', '']); // shown in the preview even before the link is added
+    const d = toSignatureData(form({ values: { ...blank(), name: 'J', title: 'T', ctaText: 'Book a call', ctaLink: 'cal.com/j' } }), client, 'email', live);
+    expect(d.cta).toEqual({ text: 'Book a call', href: 'https://cal.com/j', arrow: 'https://signatures.heights.digital/icons/cta-arrow.png', arrowDark: 'https://signatures.heights.digital/icons/cta-arrow-dark.png' });
+  });
+  it('leaves the arrow chip out of the email on a local machine, and says so', () => {
+    expect(toSignatureData(form(), client, 'email', local).cta?.arrow).toBeUndefined();
+    expect(missingFromEmail(form(), local)).toEqual(['icons']);
+    expect(missingFromEmail(form(), live)).toEqual([]);
   });
   it('ignores links that aren’t LinkedIn in the LinkedIn field', () => {
     const d = toSignatureData(form({ values: { ...blank(), name: 'J', title: 'T', linkedin: 'twitter.com/j' } }), client, 'email', live);
@@ -75,44 +65,47 @@ describe('the 128 × 128 image', () => {
   });
 });
 
-describe('the one Email field, with its "Email address as icon" switch', () => {
+describe('the one Email field: always written out in full under the job title', () => {
   const field = FIELDS.find((f) => f.key === 'email')!;
-  const make = (v: string, emailAsIcon: boolean) =>
-    toSignatureData(form({ emailAsIcon, values: { ...blank(), name: 'J', title: 'T', email: v } }), client, 'email', live);
+  const make = (v: string) => toSignatureData(form({ values: { ...blank(), name: 'J', title: 'T', email: v } }), client, 'email', live);
 
   it('is a single optional field, in Contact & Social links', () => {
     expect(field.section).toBe('contact');
     expect(FIELDS.filter((f) => /email/i.test(f.key))).toHaveLength(1);
-    expect(make('', true).email).toBeUndefined();
-    expect(make('', false).emailLine).toBeUndefined();
+    expect(make('').emailLine).toBeUndefined();
   });
-  it('switch on (the default): the address becomes the envelope icon, not a line of text', () => {
-    const d = make('jane@company.com', true);
-    expect([d.email, d.emailLine]).toEqual(['jane@company.com', undefined]);
-  });
-  it('switch off: the address is written under the job title, not an icon', () => {
-    const d = make('  jane@company.com ', false);
-    expect([d.email, d.emailLine]).toEqual([undefined, 'jane@company.com']);
+  it('writes the address under the job title, never as an icon', () => {
+    const d = make('  jane@company.com ');
+    expect(d.emailLine).toBe('jane@company.com');
+    expect(Object.keys(d.icons ?? {})).not.toContain('email');
     const html = buildSignatureHtml(d);
-    expect(html).not.toContain('icons/email'); // no envelope when it's written out
+    expect(html).not.toContain('icons/email'); // no envelope icon
     expect(html).toContain('>jane@company.com</a>');
-    expect(missingFromEmail(form({ emailAsIcon: false, values: { ...blank(), name: 'J', title: 'T', email: 'j@x.com' } }), local)).not.toContain('icons');
   });
   it('accepts a normal address', () => {
     expect(field.check!('jane@company.com', blank())).toBeNull();
     expect(field.check!('jane.smith+news@sub.company.co.uk', blank())).toBeNull();
   });
-  it('turns away anything without an @, saying so, whichever way the switch is', () => {
+  it('turns away anything without an @, saying so', () => {
     for (const bad of ['jane', 'jane.company.com', 'company.com', 'Jane Smith']) {
       expect(field.check!(bad, blank())).toMatch(/needs an @/);
-      for (const on of [true, false]) { const d = make(bad, on); expect([d.email, d.emailLine]).toEqual([undefined, undefined]); }
+      expect(make(bad).emailLine).toBeUndefined();
     }
   });
   it('turns away an address that has an @ but isn’t complete', () => {
     for (const bad of ['jane@', '@company.com', 'jane@company', 'jane@company.', 'jane@@company.com', 'jane @company.com', 'jane@com pany.com', 'jane@company.c']) {
       expect(field.check!(bad, blank()), bad).toMatch(/looks incomplete/);
       expect(isEmail(bad), bad).toBe(false);
-      for (const on of [true, false]) { const d = make(bad, on); expect([d.email, d.emailLine], bad).toEqual([undefined, undefined]); }
+      expect(make(bad).emailLine, bad).toBeUndefined();
+    }
+  });
+});
+
+describe('contact icon paths', () => {
+  it('uses the new CarbonChain set in icons/v2 (the original icons stay in icons/ for signatures copied earlier)', () => {
+    for (const k of ['website', 'phone', 'linkedin'] as const) {
+      expect(ICON_PATH(k)).toBe(`/icons/v2/${k}.png`);
+      expect(ICON_PATH(k, 'dark')).toBe(`/icons/v2/${k}-white.png`);
     }
   });
 });

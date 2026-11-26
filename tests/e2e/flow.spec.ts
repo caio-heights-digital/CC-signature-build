@@ -20,19 +20,18 @@ const clipboardHtml = (page: Page) =>
     return (await item.getType('text/html')).text();
   });
 
-async function addPhoto(page: Page) {
-  await page.locator('#headshotField input[type=file]').setInputFiles(fx('photo.jpg'));
-  await expect(page.locator('#cropDialog')).toBeVisible();
-  await page.locator('#cropDialog [data-apply]').click();
-  await expect(page.locator('#headshotField .status')).toBeVisible();
+async function addImage(page: Page, file = 'photo.jpg') {
+  await page.locator('#imageField input[type=file]').setInputFiles(fx(file));
+  await expect(page.locator('#imageField .status')).toBeVisible();
 }
 
-test('full signature: fill in, photo, copy with hosted photo', async ({ page }) => {
+test('full signature: fill in, image, copy with hosted image', async ({ page }) => {
   const uploads = await fakeCloudinary(page);
   await page.goto('/');
   await page.fill('#f-name', 'Anastasiia Cherevychna');
   await page.fill('#f-title', 'Designer');
-  await addPhoto(page);
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
+  await addImage(page);
   await page.fill('#f-email', 'name@heights.digital');
   await page.fill('#f-phone', '+351 912 345 678');
   await page.fill('#f-linkedin', 'linkedin.com/in/someone');
@@ -44,7 +43,8 @@ test('full signature: fill in, photo, copy with hosted photo', async ({ page }) 
   const preview = page.locator('#previewInner');
   await expect(preview).toContainText('Anastasiia Cherevychna');
   await expect(preview).toContainText('Book a call');
-  await expect(preview.locator('img:visible')).toHaveCount(5); // photo + 4 contact icons (the image is a placeholder until uploaded)
+  await expect(preview.locator('img:visible')).toHaveCount(5); // image + 3 contact icons + the CTA arrow chip (the email is written out)
+  await expect(preview.locator('a[href="mailto:name@heights.digital"]')).toHaveText('name@heights.digital');
 
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
@@ -54,21 +54,24 @@ test('full signature: fill in, photo, copy with hosted photo', async ({ page }) 
   expect(html).toContain(HOSTED);
   expect(html).toContain('href="https://linkedin.com/in/someone"');
   expect(html).toContain('href="https://calendly.com/heights"');
-  expect(html).toContain('bgcolor="#CAFC3B"');
+  expect(html).toContain('bgcolor="#262626"'); // the Figma button
   expect(html).not.toContain('data:image');
   await expect(page.locator('#install')).toHaveAttribute('open', '');
   await page.screenshot({ path: 'test-results/full.png', fullPage: true });
 });
 
-test('blocks copying until required fields and photo are there, and says why', async ({ page }) => {
+test('blocks copying until the required fields are there, and says why', async ({ page }) => {
   await fakeCloudinary(page);
   await page.goto('/');
   await page.click('#copyBtn');
-  await expect(page.locator('#actionMsg')).toContainText('name, job title, headshot');
+  await expect(page.locator('#actionMsg')).toContainText('Check these fields first: name, job title, cta link.');
   await expect(page.locator('#f-name-err')).toHaveText('Add your name.');
+  await expect(page.locator('#f-ctaLink-err')).toHaveText('Add your cta link.');
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
-  await page.check('#noHeadshot', { force: true });
+  await page.click('#copyBtn');
+  await expect(page.locator('#actionMsg')).toContainText('Check this field first: cta link.');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.fill('#f-email', 'jane@company');
   await page.click('#copyBtn');
   await expect(page.locator('#f-email-err')).toContainText('looks incomplete');
@@ -80,38 +83,51 @@ test('blocks copying until required fields and photo are there, and says why', a
 
 test('explains file problems', async ({ page }) => {
   await page.goto('/');
-  const input = page.locator('#headshotField input[type=file]');
-  await input.setInputFiles(fx('small.png'));
-  await expect(page.locator('#headshotField .error')).toContainText('only 150×150 px');
+  const input = page.locator('#imageField input[type=file]');
+  await input.setInputFiles(fx('image-small.png'));
+  await expect(page.locator('#imageField .error')).toContainText('only 100×100 px');
   await input.setInputFiles(fx('actually-webp.jpg'));
-  await expect(page.locator('#headshotField .error')).toContainText('WebP');
-  await expect(page.locator('#headshotField .error')).toContainText('isn’t actually a JPG');
+  await expect(page.locator('#imageField .error')).toContainText('WebP');
+  await expect(page.locator('#imageField .error')).toContainText('isn’t actually a JPG');
 });
 
 test('upload setup problems are reported as setup issues', async ({ page }) => {
   await fakeCloudinary(page, 'Upload preset not found');
   await page.goto('/');
-  await addPhotoExpectingError(page);
-  await expect(page.locator('#headshotField .error')).toContainText('setup issue');
+  await page.locator('#imageField input[type=file]').setInputFiles(fx('photo.jpg'));
+  await expect(page.locator('#imageField .error')).toContainText('setup issue');
 });
-async function addPhotoExpectingError(page: Page) {
-  await page.locator('#headshotField input[type=file]').setInputFiles(fx('photo.jpg'));
-  await page.locator('#cropDialog [data-apply]').click();
-}
 
 test('locked fields are hidden, and their values come from the client file', async ({ page }) => {
   await fakeCloudinary(page);
   await page.goto('/?client=demo-locked');
   await expect(page.locator('[data-field="website"]')).toBeHidden();
-  await expect(page.locator('[data-field="ctaColour"]')).toBeHidden();
+  await expect(page.locator('[data-field="ctaColour"], .swatch')).toHaveCount(0); // no CTA colour option
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
-  await page.check('#noHeadshot', { force: true });
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied'); // copying is async; wait before reading the clipboard
   const html = await clipboardHtml(page);
   expect(html).toContain('acme.example'); // locked website comes from the client file
-  expect(html).toContain('bgcolor="#1E3A8A"'); // locked CTA colour
+  expect(html).toContain('>Book a call</a>'); // CTA text and link from the client file
+  expect(html).toContain('href="https://acme.example/contact"');
+});
+
+test('there is no headshot: no upload, no crop, no switch, and nothing for it in the preview or the copy', async ({ page }) => {
+  await fakeCloudinary(page);
+  await page.goto('/');
+  await expect(page.locator('#headshotField, #noHeadshot, #cropDialog, [data-field="headshot"]')).toHaveCount(0);
+  await expect(page.getByText(/headshot/i)).toHaveCount(0);
+  await page.fill('#f-name', 'Jane');
+  await page.fill('#f-title', 'CTO');
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
+  await expect(page.locator('#previewInner svg, #previewInner .ph-photo')).toHaveCount(0); // no grey silhouette
+  // the name is the first thing on the left of the signature
+  const firstCell = page.locator('#previewInner > table table td').first();
+  await expect(firstCell).toContainText('Jane');
+  await page.click('#copyBtn');
+  await expect(page.locator('#actionMsg')).toContainText('Copied');
+  expect(await clipboardHtml(page)).not.toMatch(/width="105"/);
 });
 
 test('there is no company logo option: just the Image upload, with an IMAGE placeholder until one is added', async ({ page }) => {
@@ -154,7 +170,7 @@ test('image option: upload a square image, and it goes in at 128 × 128 on white
 
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
-  await page.check('#noHeadshot', { force: true });
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   const html = await clipboardHtml(page);
@@ -186,7 +202,7 @@ test('image option: an image shorter than 128 px tall is shown at its own height
   await page.goto('/');
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
-  await page.check('#noHeadshot', { force: true });
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.locator('#imageField input[type=file]').setInputFiles(fx('image-short.png')); // 300 × 90
   await expect(page.locator('#imageField .error')).toBeHidden(); // no more "too small" for a short image
   await expect(page.locator('#imageField .status')).toBeVisible();
@@ -204,7 +220,7 @@ test('image option: an image shorter than 128 px tall is shown at its own height
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   const html = await clipboardHtml(page);
   expect(html).toContain(`<img src="${HOSTED}" width="128" height="38"`);
-  expect(html).toContain('width:128px;height:38px;border:0;outline:none;');
+  expect(html).toMatch(/width:\s?128px;\s?height:\s?38px;/); // Chrome may reformat the copied styles (adds spaces)
 });
 
 test('image option: a GIF is accepted, kept animated, and uploaded exactly as it was', async ({ page }) => {
@@ -237,7 +253,7 @@ test('image option: a GIF is accepted, kept animated, and uploaded exactly as it
   await expect(page.locator('#imageField .file-name')).toHaveText('anim-square.gif');
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
-  await page.check('#noHeadshot', { force: true });
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   expect(await clipboardHtml(page)).toContain(`<img src="${HOSTED}" width="128" height="128"`);
@@ -336,7 +352,7 @@ test('image option: a GIF that isn’t square is shrunk proportionately to fit 1
   // copied into the email at its shown size
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
-  await page.check('#noHeadshot', { force: true });
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   expect(await clipboardHtml(page)).toContain(`<img src="${HOSTED}" width="26" height="128"`);
@@ -374,9 +390,6 @@ test('image option: a big GIF is shrunk to a light file; one that’s still too 
   await expect(page.locator('#imageField .error')).toContainText('very wide');
   expect(uploads).toHaveLength(1);
 
-  // the headshot still refuses GIFs
-  await page.locator('#headshotField input[type=file]').setInputFiles(fx('anim-square.gif'));
-  await expect(page.locator('#headshotField .error')).toContainText('GIF, which doesn’t work well in a signature');
   expect(uploads).toHaveLength(1);
 });
 
@@ -401,8 +414,8 @@ test('image option: sits flush top-right, on desktop and on phones', async ({ pa
     await page.goto('/');
     await page.fill('#f-name', 'Anastasiia Cherevychna');
     await page.fill('#f-title', 'Designer');
-    await page.check('#noHeadshot', { force: true });
-      await page.locator('#imageField input[type=file]').setInputFiles(fx('image-square.png'));
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
+        await page.locator('#imageField input[type=file]').setInputFiles(fx('image-square.png'));
     await expect(page.locator('#imageField .status')).toBeVisible();
     await expect(page.locator('#previewInner img[width="128"]')).toHaveCount(1);
     const image = await gap();
@@ -418,28 +431,18 @@ const titleLine = (page: Page) => page.locator('#previewInner div', { hasText: /
 const style = (loc: ReturnType<Page['locator']>) =>
   loc.evaluate((el) => { const c = getComputedStyle(el); return { family: c.fontFamily, size: c.fontSize, line: c.lineHeight, colour: c.color, weight: c.fontWeight, decoration: c.textDecorationLine }; });
 
-test('one Email field in Contact & Social links, with an "Email address as icon" switch just below it', async ({ page }) => {
+test('one Email field in Contact & Social links, always written out in full under the job title', async ({ page }) => {
   await page.goto('/');
-  // only one email field, in the Contact group, with the switch directly underneath (on by default)
+  // only one email field, in the Contact group, and no icon switch
   await expect(page.locator('input[type="email"]')).toHaveCount(1);
   await expect(page.locator('[data-fields="contact"] #f-email')).toHaveCount(1);
-  const toggle = page.locator('[data-field="email"] label.toggle');
-  await expect(toggle).toHaveText('Email address as icon');
-  await expect(page.locator('#emailAsIcon')).toBeChecked();
-  const y = async (sel: string) => (await page.locator(sel).boundingBox())!.y;
-  expect(await y('#f-email')).toBeLessThan(await y('#emailAsIcon'));
-  expect(await y('#emailAsIcon')).toBeLessThan(await y('#f-phone'));
+  await expect(page.locator('#emailAsIcon, [data-field="email"] .toggle')).toHaveCount(0);
+  await expect(page.getByText(/as icon/i)).toHaveCount(0);
   await expect(page.locator('[data-field="email"] label[for="f-email"]')).toHaveText('Email (optional)');
 
-  // switch ON: an icon in the contact row, nothing written under the job title
   await page.fill('#f-email', ' jane.smith@company.com ');
-  await expect(page.locator('#previewInner .hs-ic-l[src$="icons/email.png"]')).toBeVisible();
-  await expect(page.locator('#previewInner a[href="mailto:jane.smith@company.com"]')).toHaveCount(1);
-  await expect(page.locator('#previewInner a[href="mailto:jane.smith@company.com"] .hs-ic-l')).toHaveCount(1);
-
-  // switch OFF: no icon; written under the job title in exactly the job title's style
-  await page.locator('#emailAsIcon').uncheck({ force: true });
-  await expect(page.locator('#previewInner .hs-ic-l[src$="icons/email.png"]')).toHaveCount(0);
+  // no envelope icon; written under the job title in exactly the job title's style
+  await expect(page.locator('#previewInner img[src*="icons/email"]')).toHaveCount(0);
   const link = page.locator('#previewInner a[href="mailto:jane.smith@company.com"]');
   await expect(link).toHaveText('jane.smith@company.com');
   const t = await style(titleLine(page));
@@ -451,15 +454,8 @@ test('one Email field in Contact & Social links, with an "Email address as icon"
   expect(Math.abs(eb.y - (tb.y + tb.height))).toBeLessThanOrEqual(1);
   expect(eb.height).toBe(tb.height);
 
-  // back ON: icon again, text line gone
-  await page.locator('#emailAsIcon').check({ force: true });
-  await expect(page.locator('#previewInner .hs-ic-l[src$="icons/email.png"]')).toBeVisible();
-  await expect(page.locator('#previewInner a[href="mailto:jane.smith@company.com"]')).toHaveCount(1);
-
-  // empty email: nothing at all, in either mode
+  // empty email: nothing at all
   await page.fill('#f-email', '');
-  await expect(page.locator('#previewInner a[href^="mailto:"]')).toHaveCount(0);
-  await page.locator('#emailAsIcon').uncheck({ force: true });
   await expect(page.locator('#previewInner a[href^="mailto:"]')).toHaveCount(0);
 });
 
@@ -468,8 +464,7 @@ test('email field: refuses anything that isn’t a proper address, and says why'
   await page.goto('/');
   await page.fill('#f-name', 'Jane');
   await page.fill('#f-title', 'CTO');
-  await page.check('#noHeadshot', { force: true });
-  await page.locator('#emailAsIcon').uncheck({ force: true }); // written under the job title
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
   const err = page.locator('[data-field="email"] .field-error');
 
   // empty is fine: copying works
@@ -499,38 +494,38 @@ test('email field: refuses anything that isn’t a proper address, and says why'
   await page.click('#copyBtn');
   await expect(page.locator('#actionMsg')).toContainText('Copied');
   const html = await clipboardHtml(page);
-  expect(html).toMatch(/>CTO<\/div><div style="[^"]*"><a href="mailto:jane@company\.com"[^>]*>jane@company\.com<\/a><\/div>/);
+  expect(html).toMatch(/>CTO<\/div><div [^>]*><a [^>]*href="mailto:jane@company\.com"[^>]*>jane@company\.com<\/a><\/div>/);
   expect(html).not.toContain('icons/email');
   expect(uploads).toHaveLength(0);
 });
 
 test('icons turn solid white in the dark preview', async ({ page }) => {
   await page.goto('/');
-  await page.fill('#f-email', 'jane@company.com');
-  await expect(page.locator('#previewInner .hs-ic-l[src$="icons/email.png"]')).toBeVisible();
-  await expect(page.locator('#previewInner .hs-ic-d')).toHaveCount(2); // email + default website
+  await page.fill('#f-phone', '+351 912 345 678');
+  await expect(page.locator('#previewInner .hs-ic-l[src$="icons/v2/phone.png"]')).toBeVisible();
+  await expect(page.locator('#previewInner a[title] .hs-ic-d')).toHaveCount(2); // phone + default website (contact row only)
   await expect(page.locator('#previewInner .hs-ic-d').first()).toBeHidden();
   await page.click('[data-theme-btn="dark"]');
-  await expect(page.locator('#previewInner .hs-ic-d[src$="icons/email-white.png"]')).toBeVisible();
+  await expect(page.locator('#previewInner .hs-ic-d[src$="icons/v2/phone-white.png"]')).toBeVisible();
   await expect(page.locator('#previewInner .hs-ic-l').first()).toBeHidden();
 });
 
 test('contact icons appear as fields are filled in, and each links to the right place', async ({ page }) => {
   await page.goto('/');
-  const icon = (k: string) => page.locator(`#previewInner a:has(img.hs-ic-l[src$="icons/${k}.png"])`);
+  const icon = (k: string) => page.locator(`#previewInner a:has(img.hs-ic-l[src$="icons/v2/${k}.png"])`);
   await page.fill('#f-website', '');
-  await expect(page.locator('#previewInner img.hs-ic-l')).toHaveCount(0);
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0);
   await page.fill('#f-email', 'jane@company.com');
-  await expect(page.locator('#previewInner img.hs-ic-l')).toHaveCount(1);
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0); // the email is written out, not an icon
   await page.fill('#f-website', 'company.com');
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(1);
   await page.fill('#f-phone', '+351 912 345 678');
   await page.fill('#f-linkedin', 'linkedin.com/in/jane');
-  await expect(icon('email')).toHaveAttribute('href', 'mailto:jane@company.com');
   await expect(icon('website')).toHaveAttribute('href', 'https://company.com/');
   await expect(icon('phone')).toHaveAttribute('href', 'tel:+351912345678');
   await expect(icon('linkedin')).toHaveAttribute('href', 'https://linkedin.com/in/jane');
   // one horizontal row, 28 px icons
-  const boxes = await Promise.all(['email', 'website', 'phone', 'linkedin'].map((k) => icon(k).locator('img.hs-ic-l').boundingBox()));
+  const boxes = await Promise.all(['website', 'phone', 'linkedin'].map((k) => icon(k).locator('img.hs-ic-l').boundingBox()));
   expect(new Set(boxes.map((b) => Math.round(b!.y))).size).toBe(1);
   for (const b of boxes) expect(b!.width).toBe(28);
   await page.locator('#preview').screenshot({ path: 'test-results/icons-row.png' });
@@ -581,8 +576,9 @@ test('screenshots for design review', async ({ page }) => {
   await page.goto('/');
   await page.fill('#f-name', 'Anastasiia Cherevychna');
   await page.fill('#f-title', 'Designer');
-  await page.screenshot({ path: 'test-results/empty-photo.png', clip: { x: 600, y: 170, width: 740, height: 480 } });
-  await addPhoto(page);
+  await page.fill('#f-ctaLink', 'calendly.com/jane');
+  await page.screenshot({ path: 'test-results/empty-image.png', clip: { x: 600, y: 170, width: 740, height: 480 } });
+  await addImage(page, 'image-square.png');
   await page.fill('#f-quoteText', 'Some deep and smart optional quote here');
   await page.fill('#f-quoteAuthor', 'Someone’s name');
   await page.screenshot({ path: 'test-results/design-match.png', clip: { x: 600, y: 170, width: 740, height: 520 } });
@@ -590,27 +586,67 @@ test('screenshots for design review', async ({ page }) => {
   await page.screenshot({ path: 'test-results/dark.png', clip: { x: 600, y: 170, width: 740, height: 520 } });
 });
 
-test('CTA colour picker has a hex field that stays in sync', async ({ page }) => {
+test('the CTA button is always there, styled like the Figma button, with "Book a demo" to start', async ({ page }) => {
   await page.goto('/');
-  await page.click('.swatch');
-  const hex = page.locator('.cp-hex');
-  await expect(hex).toBeVisible();
-  await expect(hex).toHaveValue('#CAFC3B');
-  await hex.fill('#1E3A8A');
-  await expect(page.locator('#f-ctaColour')).toHaveValue('#1E3A8A');
-  // dragging in the shade square updates both the hex field and the form
-  const sv = await page.locator('.cp-sv').boundingBox();
-  await page.mouse.click(sv!.x + sv!.width * 0.9, sv!.y + sv!.height * 0.1);
-  const picked = await hex.inputValue();
-  expect(picked).toMatch(/^#[0-9A-F]{6}$/);
-  expect(picked).not.toBe('#1E3A8A');
-  await expect(page.locator('#f-ctaColour')).toHaveValue(picked);
-  await page.locator('.cp').screenshot({ path: 'test-results/picker.png' });
-  await hex.fill('zz');
-  await hex.press('Enter');
-  await expect(page.locator('.cp')).toBeHidden();
-  await expect(page.locator('#f-ctaColour')).toHaveValue(picked);
-  // typing straight into the field still works too
-  await page.fill('#f-ctaColour', '#FE6C23');
-  await expect(page.locator('.swatch')).toHaveCSS('background-color', 'rgb(254, 108, 35)');
+  await expect(page.locator('[data-field="ctaColour"], .swatch')).toHaveCount(0);
+  await expect(page.locator('#f-ctaText')).toHaveValue('Book a demo');
+  await expect(page.locator('label[for="f-ctaText"] .req')).toHaveCount(1); // required
+  await expect(page.locator('label[for="f-ctaLink"] .req')).toHaveCount(1);
+  const btn = page.locator('#previewInner td[bgcolor="#262626"]');
+  await expect(btn).toBeVisible(); // there before anything is filled in
+  await expect(btn).toHaveText('Book a demo');
+  const box = (await btn.boundingBox())!;
+  expect(box.height).toBe(44); // 13 px + 18 px label + 13 px
+  // 14 px between the button and what's above it (icons, job title or email line)
+  const gapAbove = () => btn.evaluate((td) => { const t = td.closest('table')!; const p = t.previousElementSibling as HTMLElement; const last = [...p.querySelectorAll('img.hs-ic-l')].pop() ?? p; return Math.round(t.getBoundingClientRect().top - last.getBoundingClientRect().bottom); });
+  await expect.poll(gapAbove).toBe(14);
+  await page.fill('#f-website', '');
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0); // preview redrawn without contact icons
+  await expect.poll(gapAbove).toBe(14);
+  await page.fill('#f-website', 'heights.digital');
+  // label is the same size as the job title
+  const size = (el: ReturnType<Page['locator']>) => el.evaluate((e) => getComputedStyle(e).fontSize);
+  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(1); // preview redrawn with the website icon again
+  await expect.poll(async () => [await size(btn.locator('span, a').first()), await size(page.locator('#previewInner div', { hasText: /^Job title$/ }).last())]).toEqual(['18px', '18px']);
+  const chip = (await btn.locator('img.hs-ic-l').boundingBox())!;
+  expect([chip.width, chip.height, Math.round(chip.y - box.y), Math.round(box.x + box.width - chip.x - chip.width)]).toEqual([22, 22, 11, 7]); // chip centred top to bottom, 7 px from the right
+  await page.fill('#f-ctaText', 'Talk to us');
+  await expect(btn).toHaveText('Talk to us');
+  await page.fill('#f-ctaText', '');
+  await expect(btn).toHaveText('Book a demo'); // still shown while the field is empty
+  await page.locator('#preview').screenshot({ path: 'test-results/cta.png' });
+  // stays dark in the dark preview too. The dark preview inverts the signature; the button (and its chip) is
+  // inverted back, so an even number of inverting filters above it means it shows its real colours.
+  const inversions = (loc: ReturnType<Page['locator']>) =>
+    loc.evaluate((start) => { let n = 0; for (let el: Element | null = start; el; el = el.parentElement) if (getComputedStyle(el).filter !== 'none') n++; return n % 2; });
+  expect(await inversions(btn)).toBe(0);
+  await page.click('[data-theme-btn="dark"]');
+  expect(await inversions(btn)).toBe(0);
+  expect(await inversions(btn.locator('img.hs-ic-d'))).toBe(0);
+  expect(await inversions(page.locator('#previewInner [data-placeholder="image"]'))).toBe(1); // the rest (here the image placeholder) is still inverted
+  // ...and shows the Figma dark button: light background, dark label, light chip
+  expect(await btn.evaluate((td) => getComputedStyle(td).backgroundColor)).toBe('rgb(250, 248, 247)');
+  expect(await btn.locator('.hs-cta-t').evaluate((t) => getComputedStyle(t).color)).toBe('rgb(38, 38, 38)');
+  await expect(btn.locator('img.hs-ic-d[src$="icons/cta-arrow-dark.png"]')).toBeVisible();
+  await expect(btn.locator('img.hs-ic-l')).toBeHidden();
+  // job title (and email line) are #FDFDFC in the dark preview, #8D8D8B in light
+  const title = page.locator('#previewInner div', { hasText: /^Job title$/ }).last();
+  expect(await title.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(253, 253, 252)');
+  const nameLine = page.locator('#previewInner div.hs-name');
+  expect(await nameLine.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(255, 255, 255)'); // the name, #FFFFFF
+  expect(await inversions(nameLine)).toBe(0);
+  expect(await inversions(title)).toBe(0);
+  await page.click('[data-theme-btn="light"]');
+  expect(await title.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(141, 141, 139)');
+  expect(await nameLine.evaluate((t) => getComputedStyle(t).color)).toBe('rgb(52, 51, 61)'); // unchanged in light mode
+  await page.locator('#preview').screenshot({ path: 'test-results/cta-dark.png' });
+});
+
+test('serves the new icons, and still serves every original icon that earlier signatures point at', async ({ request }) => {
+  const files = ['website', 'phone', 'linkedin'].flatMap((k) => [`/icons/v2/${k}.png`, `/icons/v2/${k}-white.png`, `/icons/${k}.png`, `/icons/${k}-white.png`]);
+  for (const f of [...files, '/icons/email.png', '/icons/email-white.png', '/icons/cta-arrow.png', '/icons/cta-arrow-dark.png']) {
+    const r = await request.get(f);
+    expect(r.status(), f).toBe(200);
+    expect(r.headers()['content-type'], f).toContain('image/png');
+  }
 });

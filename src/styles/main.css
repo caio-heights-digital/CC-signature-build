@@ -44,7 +44,7 @@ button, input { font: inherit; color: inherit; }
 [data-fields] { display: flex; flex-direction: column; gap: inherit; }
 .field { display: flex; flex-direction: column; }
 .label, .field > label { font-size: var(--fs-label); line-height: var(--lh); }
-.label, .field > label, .toggle { color: color-mix(in srgb, var(--charcoal) 80%, var(--panel)); }
+.label, .field > label { color: color-mix(in srgb, var(--charcoal) 80%, var(--panel)); }
 .req { color: var(--accent); }
 .input-row { display: flex; align-items: center; gap: 10px; border-bottom: .5px solid var(--light-charcoal); padding: 6px 0; }
 .field.locked .input-row { border-bottom-style: dashed; }
@@ -61,28 +61,6 @@ button, input { font: inherit; color: inherit; }
 .field-error:empty { display: none; }
 .lock-note { margin: 4px 0 0; font-size: var(--fs-hint); color: var(--light-charcoal); }
 
-/* Colour */
-.input-row.has-picker { position: relative; }
-.swatch { width: 24px; height: 24px; flex: none; border-radius: 4px; border: 1px solid rgba(0,0,0,.15); padding: 0; cursor: pointer; }
-.cp { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; width: 264px; background: var(--white);
-  box-shadow: 0 6px 24px rgba(39,39,39,.16), 0 0 0 1px rgba(0,0,0,.06); padding: 12px; display: flex; flex-direction: column; gap: 12px; }
-.cp-sv { position: relative; height: 160px; cursor: crosshair; touch-action: none; }
-.cp-knob { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.4); transform: translate(-50%, -50%); pointer-events: none; }
-.cp-row { display: flex; align-items: center; gap: 10px; }
-.cp-preview { width: 28px; height: 28px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.15); }
-.cp-hue { flex: 1; -webkit-appearance: none; appearance: none; height: 12px; border-radius: 6px; cursor: pointer;
-  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); }
-.cp-hue::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
-.cp-hue::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
-.cp-hex-label { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--light-charcoal); }
-.input-row .cp input.cp-hex { flex: 1; min-width: 0; border: 1px solid var(--light-grey); background: var(--white); padding: 6px 8px;
-  font-size: 15px; line-height: 1.3; color: var(--charcoal); text-transform: uppercase; font-variant-numeric: tabular-nums; }
-.input-row .cp input.cp-hex:focus { outline: none; border-color: var(--charcoal); }
-.cp-eye { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border: 1px solid var(--light-grey); background: transparent; cursor: pointer; }
-.cp-eye:hover { border-color: var(--charcoal); }
-.cp-err { margin: -4px 0 0; font-size: 12px; color: var(--error); }
-.cp-err:empty { display: none; }
 
 /* Uploads */
 .upload { gap: var(--gap-s); }
@@ -110,17 +88,6 @@ button, input { font: inherit; color: inherit; }
 .error:empty { display: none; }
 .error strong { font-weight: 500; }
 .error span { color: var(--charcoal); }
-
-/* Toggle */
-.toggle { position: relative; display: flex; align-items: center; gap: 8px; font-size: var(--fs-label); cursor: pointer; user-select: none; width: max-content; max-width: 100%; }
-.toggle-below { margin-top: var(--gap-s); }
-.toggle input { position: absolute; opacity: 0; pointer-events: none; }
-.switch { width: 36px; height: 20px; border-radius: var(--pill); background: var(--switch-off); position: relative; flex: none; transition: background .15s; }
-.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--white); box-shadow: 0 2px 4px rgba(39,39,39,.1); transition: transform .15s; }
-.toggle input:checked + .switch { background: var(--charcoal); }
-.toggle input:checked + .switch::after { transform: translateX(16px); }
-.toggle input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -153,11 +120,20 @@ button, input { font: inherit; color: inherit; }
 .preview[data-theme="dark"] { background: #1f1f1f; border-color: #1f1f1f; }
 .preview[data-theme="dark"] .preview-inner { filter: invert(1) hue-rotate(180deg); background: #e0e0e0; }
 .preview[data-theme="dark"] .preview-inner img { filter: invert(1) hue-rotate(180deg); }
+/* The CTA button isn't inverted with the rest: it's flipped back like the images (its chip is then left as is) and,
+   like apps that support dark-mode code, shows the Figma dark button: light background, dark label, light chip. */
+.preview[data-theme="dark"] .preview-inner .hs-cta { filter: invert(1) hue-rotate(180deg); background-color: #FAF8F7 !important; }
+.preview[data-theme="dark"] .preview-inner .hs-cta img { filter: none; }
+.preview[data-theme="dark"] .preview-inner .hs-cta-t { color: #262626 !important; }
+/* Job title and email line: #FDFDFC in dark mode, as in apps that support dark-mode code (flipped back, then coloured). */
+.preview[data-theme="dark"] .preview-inner div.hs-sub { filter: invert(1) hue-rotate(180deg); color: #FDFDFC !important; }
+.preview[data-theme="dark"] .preview-inner a.hs-sub { color: #FDFDFC !important; }
+/* The name: #FFFFFF in dark mode. */
+.preview[data-theme="dark"] .preview-inner div.hs-name { filter: invert(1) hue-rotate(180deg); color: #FFFFFF !important; }
 .preview-inner { width: fit-content; min-width: 100%; }
 /* Apps that support dark-mode code show the solid white icons; the preview shows that best case. */
 .preview[data-theme="dark"] .hs-ic-l { display: none !important; }
 .preview[data-theme="dark"] .hs-ic-d { display: block !important; max-height: none !important; }
-.preview .ph-photo { display: block; }
 
 .cta-row { display: flex; gap: 15px; flex-wrap: wrap; }
 .msg { font-size: var(--fs-small); margin-top: -8px; }
@@ -176,27 +152,6 @@ button, input { font: inherit; color: inherit; }
 .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
 .tabs button { border: 1px solid var(--charcoal); background: transparent; border-radius: var(--pill); padding: 9px 16px; font-size: var(--fs-small); cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--charcoal); color: var(--white); }
-
-/* ---------- Crop dialog ---------- */
-.crop-dialog { border: 0; padding: 0; background: transparent; max-width: 100vw; max-height: 100vh; color: var(--charcoal); }
-.crop-dialog::backdrop { background: rgba(28,24,21,.72); }
-.crop { background: var(--white); width: min(460px, calc(100vw - 32px)); padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-.stage { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; background: #1c1815; touch-action: none; cursor: grab; user-select: none; }
-.stage.dragging { cursor: grabbing; }
-.stage img { position: absolute; top: 0; left: 0; transform-origin: 0 0; max-width: none; pointer-events: none; -webkit-user-drag: none; }
-.grid { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .15s;
-  background:
-    linear-gradient(to right, transparent calc(33.33% - .5px), rgba(255,255,255,.35) 0, rgba(255,255,255,.35) calc(33.33% + .5px), transparent 0,
-      transparent calc(66.66% - .5px), rgba(255,255,255,.35) 0, rgba(255,255,255,.35) calc(66.66% + .5px), transparent 0),
-    linear-gradient(to bottom, transparent calc(33.33% - .5px), rgba(255,255,255,.35) 0, rgba(255,255,255,.35) calc(33.33% + .5px), transparent 0,
-      transparent calc(66.66% - .5px), rgba(255,255,255,.35) 0, rgba(255,255,255,.35) calc(66.66% + .5px), transparent 0);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.55); }
-.stage:hover .grid, .stage.dragging .grid { opacity: 1; }
-.zoom { display: flex; align-items: center; gap: 12px; }
-.zoom button { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--light-charcoal); background: transparent; cursor: pointer; font-size: 18px; line-height: 1; flex: none; }
-.zoom input { flex: 1; accent-color: var(--charcoal); }
-.crop-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.crop-btns { display: flex; gap: 12px; }
 
 #sigSource { position: fixed; left: -9999px; top: 0; background: #fff; }
 

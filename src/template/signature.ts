@@ -34,7 +34,7 @@ export interface SignatureData {
    */
   cta?: { text: string; href: string; arrow?: string; arrowDark?: string };
   /**
-   * Hosted https PNG icons (56 × 56, shown at 28). `light` is always shown; the tool's icons (v3) are tiles that
+   * Hosted https PNG icons (60 × 60, shown at 30). `light` is always shown; the tool's icons (v3) are tiles that
    * look right in light and dark mode. `dark`, if given, is swapped in by apps that support dark-mode code
    * (only the older v2 set had one).
    * Without icons the row falls back to text links.
@@ -45,7 +45,7 @@ export interface SignatureData {
 }
 
 export type IconKey = 'website' | 'phone' | 'linkedin';
-const ICON = 28;
+const ICON = 30;
 const ICON_GAP = 10;
 
 // Figma colours, pre-blended onto white where the design uses opacity.

@@ -70,7 +70,7 @@ export const CTA_ARROW_PATH = '/icons/cta-arrow.png';
 export const CTA_ARROW_DARK_PATH = '/icons/cta-arrow-dark.png';
 /**
  * Contact icons on tiles (27 Nov 2026): v3 folder. A #444444 symbol (16 px, the CarbonChain Figma set) on a #EBEAE9
- * tile, 28 × 28 with 6 px corners. Email apps never recolour pictures, so a tile looks the same in light and dark mode
+ * circle, 30 × 30 (round like the CarbonChain icon buttons). Email apps never recolour pictures, so a tile looks the same in light and dark mode
  * in every app, with or without dark-mode code; there's no dark version.
  * Never delete the older folders: signatures copied earlier point at them. v2 (26 Nov 2026): #444444 with a 1 px
  * white outline plus solid white `-white` versions for dark mode. /icons/: the originals.

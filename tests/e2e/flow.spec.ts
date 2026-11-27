@@ -543,10 +543,10 @@ test('contact icons appear as fields are filled in, and each links to the right 
   await expect(icon('website')).toHaveAttribute('href', 'https://company.com/');
   await expect(icon('phone')).toHaveAttribute('href', 'tel:+351912345678');
   await expect(icon('linkedin')).toHaveAttribute('href', 'https://linkedin.com/in/jane');
-  // one horizontal row, 28 px icons
+  // one horizontal row, 30 px icons
   const boxes = await Promise.all(['website', 'phone', 'linkedin'].map((k) => icon(k).locator('img').boundingBox()));
   expect(new Set(boxes.map((b) => Math.round(b!.y))).size).toBe(1);
-  for (const b of boxes) expect(b!.width).toBe(28);
+  for (const b of boxes) expect([b!.width, b!.height]).toEqual([30, 30]);
   await page.locator('#preview').screenshot({ path: 'test-results/icons-row.png' });
 });
 

@@ -9,6 +9,7 @@ A web tool where a client's team fills in a form, uploads and crops a headshot, 
 - GitHub: `anastasiia-cherevychna/signature-builder` (public for now; can go private once the Claude GitHub app has push access). Empty until the first push.
 - Cloudinary: cloud name `fvkcrpgg`, unsigned upload preset `Signature Tool` (on Anastasiia's personal account; move to Heights later).
 - Design: Figma "Heights SaaS", node 3302:11234 (file key `o2RRR4R7ejjII9XjQQUUtM`).
+- Interface design system (since 27 Nov 2026): Figma "Carbon Chain Website handover file", page "Documentation" (file key `lnUsaop6CL20HMMWvJqWWQ`, node 8013:30860). All interface values are in `src/styles/tokens.css`.
 - Hosting: not set up yet. Netlify (free, 300 credits/month, 15 per production deploy) or Vercel (Pro needed for commercial use). `netlify.toml`, `vercel.json` and `public/_redirects` are already in place.
 
 ## Working on it
@@ -37,6 +38,7 @@ Commit as "Heights Digital <design@heights.digital>".
 - Known issue (found 26 Nov 2026, not fixed): Chrome's **Copy signature** drops the signature's `<style>` block (Chrome cleans up copied HTML), so signatures pasted from Chrome don't get the dark-mode swaps (white contact icons, dark-mode CTA). **Download HTML** keeps them. Pasted signatures still look right; they just keep the light-mode look in dark mode.
 - Preview column is sticky on desktop.
 - Light/Dark toggle is a preview of dark mode, not a setting.
+- Interface restyle (27 Nov 2026), visual only; the signature is unchanged: CarbonChain design system. Mulish (variable font, built into the page, no Google calls; OFL licence in `src/assets/fonts/`), CarbonChain colours (page `#FAF8F7`, panels `#F3F0EE`, text `#262626` / `#5C5957`, coral `#F15758` for the required asterisk only, error `#C0392F`), sentence case throughout. Header: HEIGHTS logo, a 1 px line, the CarbonChain logo (from the Figma header specimen), 32 px either side; both logos the same height (54 px on desktop, down to 28 px on phones, where the tool name moves under them). Copy signature is the Figma Primary button without its arrow chip (`#262626`, hover `#3D3D3D`, 40 px tall, 6 px corners, Mulish Bold 14); Download HTML and Browse files are the Secondary (outlined) button. Light/Dark and the install guide's email-app tabs use the Figma Segmented control (pill track, tonal selected pill). Fields keep the underline style (by request). Panels and the preview frame have 12 px corners. Keyboard focus: 2 px dark ring, 3 px gap. Judgement calls where Figma had no value: outlined-button hover (ink at 6%), the notice/error banners (Figma status colours), and Mulish weights 600 for headings.
 
 ## Next steps
 1. Push this repo to GitHub (`git remote add origin https://github.com/anastasiia-cherevychna/signature-builder && git push -u origin main`).

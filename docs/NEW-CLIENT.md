@@ -15,8 +15,10 @@ hosting, then work through this list. Each step says which file to change. "Inte
 
 ## 2. Interface (the tool's page)
 - [ ] **Design values:** `src/styles/tokens.css`. Every colour, font, text size, corner, border and spacing of the
-      interface is there. A new font also needs loading (in `index.html`, or a font file in `src/assets/`).
-- [ ] **Logo:** `src/assets/heights-logo.svg` (an image with its own colours), referenced in `index.html`.
+      interface is there, including the font: the `@font-face` rules at its top load the font files in
+      `src/assets/fonts/`. Swap those files (and their licence) for the new client's font.
+- [ ] **Logos:** `src/assets/heights-logo.svg` and `src/assets/carbonchain-logo.svg` (images with their own colours),
+      shown side by side in `index.html`. Replace the client logo, or remove it and the line between them.
 - [ ] **Interface icons:** `src/assets/icons/upload.svg` and `install.svg` (images with their own colours).
 - [ ] **Header and footer text:** `index.html` ("CarbonChain Email Signature Builder", "Heights Digital").
 - [ ] **Browser tab title:** made from the client's `name` in its client file ("Email Signature Builder – <name>").

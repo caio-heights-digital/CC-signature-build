@@ -33,6 +33,10 @@ Personal fields (`name`, `title`) can't be locked.
 2. Check the inbox list in `docs/inbox-checklist.md` for any change to the signature itself (`src/template/`).
 3. Push to `main`. The host deploys it.
 
+### Setting the tool up for another client
+
+Clone this repo into a new one and follow `docs/NEW-CLIENT.md`.
+
 ## Working on the code
 
 ```
@@ -56,7 +60,7 @@ If Playwright can't find a browser, set `PW_CHROMIUM` to a Chromium executable.
 | `src/image/` | File checks with plain-language errors, resizing (and GIF resizing) |
 | `src/upload/` | Image hosting (Cloudinary). The only file to change to switch provider or move to signed uploads |
 | `src/config/` | Client file format and loading |
-| `src/styles/tokens.css` | Colours, type and spacing from Figma |
+| `src/styles/tokens.css` | Every design value of the tool's page (colours, font, sizes, corners, spacing). Not the signature's |
 | `tests/` | `unit/` (Vitest) and `e2e/` (Playwright) |
 
 ### Adding a form field

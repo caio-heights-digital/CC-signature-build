@@ -1,36 +1,152 @@
-/* Design tokens, from the Heights SaaS Figma file. Change a value here and it changes everywhere. */
+/* Design tokens for the tool's own interface (the page, form, buttons and preview frame).
+   Every colour, font, text size, corner, border and spacing value used by main.css lives here,
+   so restyling the tool for another client is mostly a matter of editing this one file.
+
+   Source: CarbonChain design system, Figma "Carbon Chain Website handover file" (file lnUsaop6CL20HMMWvJqWWQ),
+   page "Documentation" (node 8013:30860). Figma variable names are given in brackets.
+
+   Not in here, on purpose:
+   - The email signature itself (src/template/): it has its own fixed colours and fonts, because email apps
+     ignore page styles. Changing this file never changes a signature.
+   - The dark-mode imitation in the preview (bottom of main.css): those colours copy what email apps do to the
+     signature, so they belong to the signature, not the interface.
+   - Images that carry their own colours: the logos (src/assets/carbonchain-logo.svg in the header, heights-logo.svg in the footer) and the
+     two interface icons (src/assets/icons/). Replace those files to restyle them.
+   See docs/NEW-CLIENT.md for everything that changes when this tool is set up for another client. */
+
+/* Mulish, built into the page (no calls to Google). Free under the SIL Open Font License: src/assets/fonts/OFL.txt.
+   One variable file per character set covers every weight. */
+@font-face {
+  font-family: "Mulish";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url("../assets/fonts/mulish-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Mulish";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url("../assets/fonts/mulish-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
-  /* Colour styles */
-  --charcoal: #332d28;
-  --light-charcoal: #999693;
-  --lightest-grey: #ebeae9;
-  --light-grey: #cccac9;
-  --black: #01000c;
-  --white: #ffffff;
-  --panel: #f7f7f6;
-  --accent: #fe6c23;   /* required asterisk, logo mark */
-  --lime: #cafc3b;     /* primary CTA */
-  --switch-off: #d2d5da;
-  --error: #c4320a;
-  --ok: #2f7a3b;
+  /* ---------- Colour ---------- */
+  --bg-page: #ffffff;               /* page background (white, by request; Figma bg/page is #FAF8F7) */
+  --bg-panel: #f3f0ee;              /* [bg/surface-2] form panel and install guide */
+  --bg-surface: #fdfdfc;            /* [bg/surface] upload box */
+  --bg-track: #d9dbdc;              /* [bg/surface-3] upload progress track */
+  --text: #262626;                  /* [text/primary] */
+  --text-secondary: #5c5957;        /* [text/secondary] hints, unselected options, footer year */
+  --text-inverse: #fdfdfc;          /* [chip/flip/bg] label on the dark button */
+  --border-subtle: #b0afad80;       /* [border/subtle] image thumbnail */
+  --border-strong: #8f8a88;         /* [border/strong] field underline, outlined buttons */
+  --accent: #f15758;                /* [brand/coral] required asterisk only (too light for text) */
+  --focus: #262626;                 /* [focus/ring] keyboard focus */
+  --btn-primary-bg: #262626;        /* [button/primary/bg] Copy signature */
+  --btn-primary-hover: #3d3d3d;     /* [button/primary/bg-hover] */
+  --btn-secondary-hover: #2626260f; /* outlined buttons on hover (no Figma value; ink at 6%, like the segment track) */
+  --seg-bg: #faf8f7;                /* [bg/page] Light/Dark and email-app switches */
+  --seg-border: #26262624;          /* ink at 14% (Figma Segmented control) */
+  --seg-selected: #26262612;        /* ink at 7% (Figma Segmented control) */
+  --error: #c0392f;                 /* [status/bad] */
+  --error-bg: #f9edec;              /* [destructive/bg-quiet-hover] */
+  --ok: #2a7052;                    /* [status/good-text] */
+  --notice-bg: #f1eadb;             /* [status/warn-bg] yellow notice banner */
+  --notice-border: #a8730f;         /* [status/warn] */
+  --preview-bg: #fff;               /* behind the signature in the Light preview: email apps show it on white */
+  --preview-border: #ebeae9;        /* faint outline round the preview, as before the restyle (square corners) */
 
-  /* Type */
-  --font: "Neue Haas Grotesk Text Pro", "Neue Haas Grotesk Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --fs-h2: 20px;
+  /* ---------- Type ---------- */
+  --font: "Mulish", Arial, Helvetica, sans-serif;  /* [Typography/font/Body] */
+  --fs-body: 16px;            /* [Paragraph/reg] page default, footer */
+  --fs-header: 18px;          /* [Paragraph/md] tool name, top right */
+  --fs-header-phone: 15px;
+  --fs-h2: 20px;              /* [Title/reg-semibold] */
   --fs-h3: 16px;
-  --fs-label: 16px;
-  --fs-input: 18px;
-  --fs-small: 14px;
-  --fs-hint: 12px;
-  --lh: 1.45;
+  --fs-label: 16px;           /* [Paragraph/reg] */
+  --fs-input: 18px;           /* [Paragraph/md] */
+  --fs-small: 14px;           /* [Paragraph/sm] */
+  --fs-button: 14px;          /* [Button/sm] */
+  --fs-option: 14px;          /* [Label/md-semibold] switch options */
+  --fs-steps: 14px;           /* [Paragraph/sm] install steps */
+  --fs-status: 14px;          /* field errors, "uploaded" tick */
+  --fs-hint: 12px;            /* [Label/sm] */
+  --lh: 1.5;                  /* [Paragraph/*] */
+  --lh-tight: 1.2;            /* tool name, top right; switch options */
+  --lh-drop: 1.5;             /* upload box text */
+  --fw-heading: 600;          /* section titles (h2) */
+  --fw-subheading: 600;       /* group titles (h3) */
+  --fw-strong: 600;           /* first line of an upload error */
+  --fw-button: 700;           /* [Button/sm] */
+  --fw-option: 600;           /* [Label/md-semibold] */
+  --heading-case: none;
+  --heading-opacity: 1;
+  --button-case: none;        /* sentence case, as in Figma */
+  --tracking-button: .005em;  /* [Button/sm] letter spacing 0.5% */
+  --tracking-drop: 0;
+  --tracking-seg: 0;
 
-  /* Space and layout */
+  /* ---------- Corners and borders ---------- */
+  --radius-btn: 6px;          /* [corner/sm] buttons */
+  --radius-box: 6px;          /* [corner/sm] upload box */
+  --radius-panel: 12px;       /* [corner/md] form panel, install guide (not the preview: it imitates an email) */
+  --pill: 1000px;             /* [corner/full] Light/Dark and email-app switches */
+  --radius-field: 0;
+  --field-line: .5px;         /* underline under each field */
+  --field-line-focus: 1px;
+  --border: 1px;              /* outlined buttons, preview outline, switches */
+  --rule: 2px;                /* left edge of error and notice boxes */
+  --focus-ring: 2px;          /* Figma: 2px ring, 3px offset */
+  --focus-offset: 3px;
+  --link-offset: 3px;         /* underline gap on text links */
+  --drop-over: 1.5px;         /* upload box outline while a file is dragged over it */
+  --bar: 3px;                 /* upload progress bar */
+
+  /* ---------- Space and layout ---------- */
   --gap-xs: 4px;
   --gap-s: 8px;
   --gap-m: 16px;
   --gap-l: 24px;
   --gap-xl: 48px;
   --page-max: 1200px;
+  --page-pad-y: 48px;
+  --page-pad-x: 16px;
+  --header-gap: 77px;         /* below the header, above the footer */
+  --header-gap-narrow: 40px;
   --form-w: 450px;
-  --pill: 100px;
+  --logo-h: 48px;             /* CarbonChain logo, top left */
+  --footer-logo-h: 14px;      /* HEIGHTS logo in "Built by", about the height of the footer text's capitals */
+  --built-by-gap: 8px;
+  --group-gap: 14px;
+  --field-pad: 6px;
+  --input-gap: 10px;
+  --drop-pad: 20px 16px;
+  --drop-gap: 10px;
+  --upload-pad: 16px;
+  --thumb: 72px;
+  --meta-gap: 6px;
+  --box-pad: 10px 12px;       /* upload error box */
+  --banner-pad: 12px 16px;
+  --btn-h: 40px;              /* [Button md] */
+  --btn-pad: 0 16px;
+  --btn-gap: 6px;
+  --btn-row-gap: 16px;
+  --seg-h: 40px;              /* [Segmented control md]: 40 track, 32 option, 4 inside */
+  --seg-inset: 3px;           /* plus the 1px border = 4px */
+  --seg-pad: 0 16px;
+  --seg-option-min: 72px;
+  --tab-pad: 0 8px;           /* email-app switch options: narrower, so three fit on a phone */
+  --preview-pad: 24px;
+  --preview-pad-phone: 16px;
+  --install-pad: 20px 24px;
+  --install-gap: 20px;
+  --steps-indent: 20px;
+  --steps-gap: 6px;
+  --sticky-top: 24px;
 }

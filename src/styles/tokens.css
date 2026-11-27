@@ -10,7 +10,7 @@
      ignore page styles. Changing this file never changes a signature.
    - The dark-mode imitation in the preview (bottom of main.css): those colours copy what email apps do to the
      signature, so they belong to the signature, not the interface.
-   - Images that carry their own colours: the logos (src/assets/heights-logo.svg, carbonchain-logo.svg) and the
+   - Images that carry their own colours: the logos (src/assets/carbonchain-logo.svg in the header, heights-logo.svg in the footer) and the
      two interface icons (src/assets/icons/). Replace those files to restyle them.
    See docs/NEW-CLIENT.md for everything that changes when this tool is set up for another client. */
 
@@ -44,7 +44,7 @@
   --text: #262626;                  /* [text/primary] */
   --text-secondary: #5c5957;        /* [text/secondary] hints, unselected options, footer year */
   --text-inverse: #fdfdfc;          /* [chip/flip/bg] label on the dark button */
-  --border-subtle: #b0afad80;       /* [border/subtle] preview frame, logo divider, image thumbnail */
+  --border-subtle: #b0afad80;       /* [border/subtle] image thumbnail */
   --border-strong: #8f8a88;         /* [border/strong] field underline, outlined buttons */
   --accent: #f15758;                /* [brand/coral] required asterisk only (too light for text) */
   --focus: #262626;                 /* [focus/ring] keyboard focus */
@@ -60,6 +60,7 @@
   --notice-bg: #f1eadb;             /* [status/warn-bg] yellow notice banner */
   --notice-border: #a8730f;         /* [status/warn] */
   --preview-bg: #fff;               /* behind the signature in the Light preview: email apps show it on white */
+  --preview-border: #ebeae9;        /* faint outline round the preview, as before the restyle (square corners) */
 
   /* ---------- Type ---------- */
   --font: "Mulish", Arial, Helvetica, sans-serif;  /* [Typography/font/Body] */
@@ -94,19 +95,18 @@
   /* ---------- Corners and borders ---------- */
   --radius-btn: 6px;          /* [corner/sm] buttons */
   --radius-box: 6px;          /* [corner/sm] upload box */
-  --radius-panel: 12px;       /* [corner/md] form panel, install guide, preview frame */
+  --radius-panel: 12px;       /* [corner/md] form panel, install guide (not the preview: it imitates an email) */
   --pill: 1000px;             /* [corner/full] Light/Dark and email-app switches */
   --radius-field: 0;
   --field-line: .5px;         /* underline under each field */
   --field-line-focus: 1px;
-  --border: 1px;              /* outlined buttons, preview frame, switches */
+  --border: 1px;              /* outlined buttons, preview outline, switches */
   --rule: 2px;                /* left edge of error and notice boxes */
   --focus-ring: 2px;          /* Figma: 2px ring, 3px offset */
   --focus-offset: 3px;
   --link-offset: 3px;         /* underline gap on text links */
   --drop-over: 1.5px;         /* upload box outline while a file is dragged over it */
   --bar: 3px;                 /* upload progress bar */
-  --divider: 1px;             /* line between the two logos */
 
   /* ---------- Space and layout ---------- */
   --gap-xs: 4px;
@@ -120,8 +120,9 @@
   --header-gap: 77px;         /* below the header, above the footer */
   --header-gap-narrow: 40px;
   --form-w: 450px;
-  --logo-h: clamp(28px, 5.5vw, 54px);  /* both logos are this tall */
-  --logo-gap: 32px;           /* each side of the line between the logos */
+  --logo-h: 27px;             /* CarbonChain logo, top left */
+  --footer-logo-h: 14px;      /* HEIGHTS logo in "Built by", about the height of the footer text's capitals */
+  --built-by-gap: 8px;
   --group-gap: 14px;
   --field-pad: 6px;
   --input-gap: 10px;

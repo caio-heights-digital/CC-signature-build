@@ -17,10 +17,11 @@ hosting, then work through this list. Each step says which file to change. "Inte
 - [ ] **Design values:** `src/styles/tokens.css`. Every colour, font, text size, corner, border and spacing of the
       interface is there, including the font: the `@font-face` rules at its top load the font files in
       `src/assets/fonts/`. Swap those files (and their licence) for the new client's font.
-- [ ] **Logos:** `src/assets/heights-logo.svg` and `src/assets/carbonchain-logo.svg` (images with their own colours),
-      shown side by side in `index.html`. Replace the client logo, or remove it and the line between them.
+- [ ] **Logos:** the client's logo top left (`src/assets/carbonchain-logo.svg`) and the HEIGHTS logo in the footer's
+      "Built by" (`src/assets/heights-logo.svg`), both in `index.html`. They're images with their own colours: replace
+      the client's file. Sizes are `--logo-h` and `--footer-logo-h` in `tokens.css`.
 - [ ] **Interface icons:** `src/assets/icons/upload.svg` and `install.svg` (images with their own colours).
-- [ ] **Header and footer text:** `index.html` ("CarbonChain Email Signature Builder", "Heights Digital").
+- [ ] **Header text:** `index.html` ("CarbonChain Email Signature Builder").
 - [ ] **Browser tab title:** made from the client's `name` in its client file ("Email Signature Builder – <name>").
 - [ ] **Messages that say "the Heights team":** `src/main.ts` (unknown link) and `src/upload/cloudinary.ts` (upload
       problems). Change them if someone else supports the client.

@@ -21,17 +21,12 @@ button, input { font: inherit; color: inherit; }
 /* ---------- Page ---------- */
 .page { max-width: calc(var(--page-max) + 2 * var(--page-pad-x)); margin: 0 auto; padding: var(--page-pad-y) var(--page-pad-x); }
 .site-header { display: flex; justify-content: space-between; align-items: center; gap: var(--gap-l); margin-bottom: var(--header-gap); }
-.logos { display: flex; align-items: stretch; gap: var(--logo-gap); }
 .site-logo { height: var(--logo-h); width: auto; display: block; }
-.logo-divider { width: var(--divider); background: var(--border-subtle); flex: none; }
 .site-header p { margin: 0; font-size: var(--fs-header); line-height: var(--lh-tight); text-align: right; }
-/* Phones: the tool name goes under the logos. */
-@media (max-width: 720px) {
-  .site-header { flex-direction: column; align-items: flex-start; gap: var(--gap-m); }
-  .site-header p { text-align: left; }
-}
 @media (max-width: 420px) { .site-header p { font-size: var(--fs-header-phone); } }
-.site-footer { display: flex; justify-content: space-between; margin-top: var(--header-gap); font-size: var(--fs-body); }
+.site-footer { display: flex; justify-content: space-between; align-items: center; margin-top: var(--header-gap); font-size: var(--fs-body); }
+.built-by { display: inline-flex; align-items: center; gap: var(--built-by-gap); }
+.built-by img { height: var(--footer-logo-h); width: auto; display: block; }
 .cols { display: grid; grid-template-columns: var(--form-w) minmax(0, 1fr); gap: var(--gap-xl); align-items: start; }
 @media (max-width: 960px) {
   .cols { grid-template-columns: minmax(0, 1fr); } /* minmax: long labels and inputs wrap or shrink instead of widening the page */
@@ -131,7 +126,7 @@ button, input { font: inherit; color: inherit; }
 }
 .seg button[aria-pressed="true"], .tabs button[aria-selected="true"] { background: var(--seg-selected); color: var(--text); }
 
-.preview { border: var(--border) solid var(--border-subtle); border-radius: var(--radius-panel); padding: var(--preview-pad); overflow-x: auto; background: var(--preview-bg); }
+.preview { border: var(--border) solid var(--preview-border); padding: var(--preview-pad); overflow-x: auto; background: var(--preview-bg); }
 /* ---- Dark preview: the colours below are the signature's, not the interface's, so they stay here, not in tokens.css. ---- */
 /* Approximates how Gmail/Outlook invert colours in dark mode. Images are flipped back, like the real apps do. */
 .preview[data-theme="dark"] { background: #1f1f1f; border-color: #1f1f1f; }

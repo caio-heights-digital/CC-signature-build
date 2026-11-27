@@ -54,6 +54,13 @@ describe('signature HTML is email-safe', () => {
       ['linkedin', 'https://linkedin.com/in/someone', 'LinkedIn'],
     ]);
   });
+  it('an icon without a dark version (the v3 tiles) has no swap class, so dark-mode code can never hide it', () => {
+    const tile = { light: 'https://signatures.heights.digital/icons/v3/phone.png' };
+    const h = buildSignatureHtml({ name: 'J', title: 'T', phone: full.phone, icons: { phone: tile } });
+    const row = h.match(/<table[^>]*margin-top:10px;"><tr>(.*?)<\/tr><\/table>/)![1];
+    expect(row).toMatch(/<a href="tel:\+351912345678"[^>]*><img src="https:\/\/signatures\.heights\.digital\/icons\/v3\/phone\.png" width="28" height="28" alt="\+351 912 345 678" style="[^"]*display:block;">/);
+    expect(row).not.toMatch(/hs-ic/);
+  });
   it('only shows icons for filled-in fields', () => {
     const h = buildSignatureHtml({ name: 'J', title: 'T', website: 'https://x.com/', icons: full.icons });
     expect(h).toContain('icons/v2/website.png');

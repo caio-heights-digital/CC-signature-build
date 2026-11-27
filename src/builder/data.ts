@@ -56,7 +56,7 @@ export function toSignatureData(s: FormState, client: ClientConfig, purpose: Pur
   const icons: SignatureData['icons'] = {};
   for (const k of ICON_KEYS) {
     const light = resolve(ICON_PATH(k));
-    if (purpose === 'preview' || isPublic(light)) icons[k] = { light, dark: resolve(ICON_PATH(k, 'dark')) };
+    if (purpose === 'preview' || isPublic(light)) icons[k] = { light }; // a tile looks right in light and dark mode, so no dark version
   }
   d.icons = icons;
   return d;
@@ -69,10 +69,13 @@ export const CTA_ARROW_PATH = '/icons/cta-arrow.png';
 /** Its dark-mode version (Figma dark button: #D9DBDC chip, #262626 arrow). */
 export const CTA_ARROW_DARK_PATH = '/icons/cta-arrow-dark.png';
 /**
- * Contact icons (CarbonChain Figma set, 26 Nov 2026): v2 folder, so signatures copied before then keep the
- * original icons in /icons/. Light = #444444 with a 1 px white outline (Gmail keeps it in dark mode); dark = #FDFDFC.
+ * Contact icons on tiles (27 Nov 2026): v3 folder. A #444444 symbol (16 px, the CarbonChain Figma set) on a #EBEAE9
+ * tile, 28 × 28 with 6 px corners. Email apps never recolour pictures, so a tile looks the same in light and dark mode
+ * in every app, with or without dark-mode code; there's no dark version.
+ * Never delete the older folders: signatures copied earlier point at them. v2 (26 Nov 2026): #444444 with a 1 px
+ * white outline plus solid white `-white` versions for dark mode. /icons/: the originals.
  */
-export const ICON_PATH = (k: IconKey, mode: 'light' | 'dark' = 'light') => `/icons/v2/${k}${mode === 'dark' ? '-white' : ''}.png`;
+export const ICON_PATH = (k: IconKey) => `/icons/v3/${k}.png`;
 const isPublic = (src: string) => /^https:\/\//.test(src);
 
 export type Missing = 'image' | 'icons';

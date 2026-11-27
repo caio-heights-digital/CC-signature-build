@@ -34,8 +34,9 @@ export interface SignatureData {
    */
   cta?: { text: string; href: string; arrow?: string; arrowDark?: string };
   /**
-   * Hosted https PNG icons (56 × 56, shown at 28). `light` is charcoal with a white outline, so it stays
-   * visible everywhere; `dark` is solid white and is swapped in by apps that support dark-mode code.
+   * Hosted https PNG icons (56 × 56, shown at 28). `light` is always shown; the tool's icons (v3) are tiles that
+   * look right in light and dark mode. `dark`, if given, is swapped in by apps that support dark-mode code
+   * (only the older v2 set had one).
    * Without icons the row falls back to text links.
    */
   icons?: Partial<Record<IconKey, { light: string; dark?: string }>>;
@@ -77,10 +78,11 @@ function contactRow(d: SignatureData): string {
     const pad = i < items.length - 1 ? `padding:0 ${ICON_GAP}px 0 0;` : 'padding:0;';
     const icon = icons[it.key];
     const img = (src: string, cls: string, extra: string, alt: string) =>
-      `<img class="${cls}" src="${esc(src)}" width="${ICON}" height="${ICON}" alt="${esc(alt)}" ` +
+      `<img ${cls ? `class="${cls}" ` : ''}src="${esc(src)}" width="${ICON}" height="${ICON}" alt="${esc(alt)}" ` +
       `style="width:${ICON}px;height:${ICON}px;border:0;outline:none;${extra}">`;
     const inner = icon
-      ? img(icon.light, 'hs-ic-l', 'display:block;', it.label) +
+      ? // Only an icon with a dark version gets the swap class; otherwise dark-mode code would hide it with nothing in its place.
+        img(icon.light, icon.dark ? 'hs-ic-l' : '', 'display:block;', it.label) +
         // Hidden unless the email app is in dark mode and understands the <style> below.
         (icon.dark ? img(icon.dark, 'hs-ic-d', 'display:none;max-height:0;overflow:hidden;mso-hide:all;', '') : '')
       : `<span style="${FONT}font-size:14px;line-height:20px;color:${COLOURS.link};white-space:nowrap;">${esc(it.label)}</span>`;

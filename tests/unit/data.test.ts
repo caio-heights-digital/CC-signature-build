@@ -18,8 +18,7 @@ describe('form → signature data', () => {
   it('icons are full public links on the live site, and left out (and reported) on a local machine', () => {
     const values = { ...blank(), name: 'J', title: 'T', website: 'x.com' };
     expect(toSignatureData(form({ values }), client, 'email', live).icons?.website).toEqual({
-      light: 'https://signatures.heights.digital/icons/v2/website.png',
-      dark: 'https://signatures.heights.digital/icons/v2/website-white.png',
+      light: 'https://signatures.heights.digital/icons/v3/website.png', // a tile: no dark version needed
     });
     expect(toSignatureData(form({ values }), client, 'email', local).icons).toEqual({});
     expect(missingFromEmail(form({ values }), local)).toContain('icons');
@@ -102,10 +101,7 @@ describe('the one Email field: always written out in full under the job title', 
 });
 
 describe('contact icon paths', () => {
-  it('uses the new CarbonChain set in icons/v2 (the original icons stay in icons/ for signatures copied earlier)', () => {
-    for (const k of ['website', 'phone', 'linkedin'] as const) {
-      expect(ICON_PATH(k)).toBe(`/icons/v2/${k}.png`);
-      expect(ICON_PATH(k, 'dark')).toBe(`/icons/v2/${k}-white.png`);
-    }
+  it('uses the tile icons in icons/v3 (v2 and the originals in icons/ stay for signatures copied earlier)', () => {
+    for (const k of ['website', 'phone', 'linkedin'] as const) expect(ICON_PATH(k)).toBe(`/icons/v3/${k}.png`);
   });
 });

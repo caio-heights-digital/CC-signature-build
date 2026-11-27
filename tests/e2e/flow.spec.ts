@@ -518,33 +518,33 @@ test('email field: refuses anything that isn’t a proper address, and says why'
   expect(uploads).toHaveLength(0);
 });
 
-test('icons turn solid white in the dark preview', async ({ page }) => {
+test('contact icons are tiles that stay the same in the dark preview (no dark versions to swap in)', async ({ page }) => {
   await page.goto('/');
   await page.fill('#f-phone', '+351 912 345 678');
-  await expect(page.locator('#previewInner .hs-ic-l[src$="icons/v2/phone.png"]')).toBeVisible();
-  await expect(page.locator('#previewInner a[title] .hs-ic-d')).toHaveCount(2); // phone + default website (contact row only)
-  await expect(page.locator('#previewInner .hs-ic-d').first()).toBeHidden();
+  const phone = page.locator('#previewInner a[title] img[src$="icons/v3/phone.png"]');
+  await expect(phone).toBeVisible();
+  await expect(page.locator('#previewInner a[title] img')).toHaveCount(2); // phone + default website (contact row only), one image each
   await page.click('[data-theme-btn="dark"]');
-  await expect(page.locator('#previewInner .hs-ic-d[src$="icons/v2/phone-white.png"]')).toBeVisible();
-  await expect(page.locator('#previewInner .hs-ic-l').first()).toBeHidden();
+  await expect(phone).toBeVisible();
+  await expect(page.locator('#previewInner a[title] img:visible')).toHaveCount(2);
 });
 
 test('contact icons appear as fields are filled in, and each links to the right place', async ({ page }) => {
   await page.goto('/');
-  const icon = (k: string) => page.locator(`#previewInner a:has(img.hs-ic-l[src$="icons/v2/${k}.png"])`);
+  const icon = (k: string) => page.locator(`#previewInner a:has(img[src$="icons/v3/${k}.png"])`);
   await page.fill('#f-website', '');
-  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0);
+  await expect(page.locator('#previewInner a[title] img')).toHaveCount(0);
   await page.fill('#f-email', 'jane@company.com');
-  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0); // the email is written out, not an icon
+  await expect(page.locator('#previewInner a[title] img')).toHaveCount(0); // the email is written out, not an icon
   await page.fill('#f-website', 'company.com');
-  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(1);
+  await expect(page.locator('#previewInner a[title] img')).toHaveCount(1);
   await page.fill('#f-phone', '+351 912 345 678');
   await page.fill('#f-linkedin', 'linkedin.com/in/jane');
   await expect(icon('website')).toHaveAttribute('href', 'https://company.com/');
   await expect(icon('phone')).toHaveAttribute('href', 'tel:+351912345678');
   await expect(icon('linkedin')).toHaveAttribute('href', 'https://linkedin.com/in/jane');
   // one horizontal row, 28 px icons
-  const boxes = await Promise.all(['website', 'phone', 'linkedin'].map((k) => icon(k).locator('img.hs-ic-l').boundingBox()));
+  const boxes = await Promise.all(['website', 'phone', 'linkedin'].map((k) => icon(k).locator('img').boundingBox()));
   expect(new Set(boxes.map((b) => Math.round(b!.y))).size).toBe(1);
   for (const b of boxes) expect(b!.width).toBe(28);
   await page.locator('#preview').screenshot({ path: 'test-results/icons-row.png' });
@@ -615,15 +615,15 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
   const box = (await btn.boundingBox())!;
   expect(box.height).toBe(44); // 13 px + 18 px label + 13 px
   // 16 px between the button and the contact icons above it; 14 px when a line of text (job title or email) is last
-  const gapAbove = () => btn.evaluate((td) => { const t = td.closest('table')!; const p = t.previousElementSibling as HTMLElement; const last = [...p.querySelectorAll('img.hs-ic-l')].pop() ?? p; return Math.round(t.getBoundingClientRect().top - last.getBoundingClientRect().bottom); });
+  const gapAbove = () => btn.evaluate((td) => { const t = td.closest('table')!; const p = t.previousElementSibling as HTMLElement; const last = [...p.querySelectorAll('a[title] img')].pop() ?? p; return Math.round(t.getBoundingClientRect().top - last.getBoundingClientRect().bottom); });
   await expect.poll(gapAbove).toBe(16);
   await page.fill('#f-website', '');
-  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(0); // preview redrawn without contact icons
+  await expect(page.locator('#previewInner a[title] img')).toHaveCount(0); // preview redrawn without contact icons
   await expect.poll(gapAbove).toBe(14);
   await page.fill('#f-website', 'heights.digital');
   // label is the same size as the job title
   const size = (el: ReturnType<Page['locator']>) => el.evaluate((e) => getComputedStyle(e).fontSize);
-  await expect(page.locator('#previewInner a[title] img.hs-ic-l')).toHaveCount(1); // preview redrawn with the website icon again
+  await expect(page.locator('#previewInner a[title] img')).toHaveCount(1); // preview redrawn with the website icon again
   await expect.poll(async () => [await size(btn.locator('span, a').first()), await size(page.locator('#previewInner div', { hasText: /^Job title$/ }).last())]).toEqual(['18px', '18px']);
   const chip = (await btn.locator('img.hs-ic-l').boundingBox())!;
   expect([chip.width, chip.height, Math.round(chip.y - box.y), Math.round(box.x + box.width - chip.x - chip.width)]).toEqual([22, 22, 11, 7]); // chip centred top to bottom, 7 px from the right
@@ -660,7 +660,7 @@ test('the CTA button is always there, styled like the Figma button, with "Book a
 });
 
 test('serves the new icons, and still serves every original icon that earlier signatures point at', async ({ request }) => {
-  const files = ['website', 'phone', 'linkedin'].flatMap((k) => [`/icons/v2/${k}.png`, `/icons/v2/${k}-white.png`, `/icons/${k}.png`, `/icons/${k}-white.png`]);
+  const files = ['website', 'phone', 'linkedin'].flatMap((k) => [`/icons/v3/${k}.png`, `/icons/v2/${k}.png`, `/icons/v2/${k}-white.png`, `/icons/${k}.png`, `/icons/${k}-white.png`]);
   for (const f of [...files, '/icons/email.png', '/icons/email-white.png', '/icons/cta-arrow.png', '/icons/cta-arrow-dark.png']) {
     const r = await request.get(f);
     expect(r.status(), f).toBe(200);

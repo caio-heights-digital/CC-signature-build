@@ -34,9 +34,9 @@ hosting, then work through this list. Each step says which file to change. "Inte
 - [ ] **Dark-mode colours of the signature:** also in `src/template/signature.ts` (`titleDark` and `nameDark` in
       `COLOURS`, `darkBg` and `darkText` in `CTA`), and again at the bottom of `src/styles/main.css`, where the tool's
       Dark preview imitates them. Keep both in step.
-- [ ] **Contact icons:** `public/icons/v2/` (`<name>.png` light, `<name>-white.png` dark; 56 × 56, shown at 28 × 28).
-      Before the new address has any users you can replace these files directly. After that, use a new folder
-      (`v3/`) and change `ICON_PATH` in `src/builder/data.ts`.
+- [ ] **Contact icons:** `public/icons/v3/` (`<name>.png`, a symbol on a light circle, 60 × 60, shown at 30 × 30; one
+      version for light and dark mode). Before the new address has any users you can replace these files directly.
+      After that, use a new folder (`v4/`) and change `ICON_PATH` in `src/builder/data.ts`.
 - [ ] **CTA arrow chip:** `public/icons/cta-arrow.png` and `cta-arrow-dark.png` (44 × 44, shown at 22 × 22). Same rule
       as the icons.
 - [ ] **Default CTA text** ("Book a demo"): `CTA_TEXT` in `src/builder/fields.ts`, or per client in its client file

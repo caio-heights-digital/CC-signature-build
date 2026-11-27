@@ -47,12 +47,19 @@ describe('signature HTML is email-safe', () => {
   });
   it('shows website, phone and LinkedIn as a row of clickable icons (no email icon)', () => {
     const row = html.match(/<table[^>]*margin-top:10px;"><tr>(.*?)<\/tr><\/table>/)![1];
-    const links = [...row.matchAll(/<a href="([^"]+)"[^>]*><img class="hs-ic-l" src="[^"]+icons\/v2\/(\w+)\.png" width="28" height="28" alt="([^"]+)"/g)].map((m) => [m[2], m[1], m[3]]);
+    const links = [...row.matchAll(/<a href="([^"]+)"[^>]*><img class="hs-ic-l" src="[^"]+icons\/v2\/(\w+)\.png" width="30" height="30" alt="([^"]+)"/g)].map((m) => [m[2], m[1], m[3]]);
     expect(links).toEqual([
       ['website', 'https://heights.digital/', 'heights.digital'],
       ['phone', 'tel:+351912345678', '+351 912 345 678'],
       ['linkedin', 'https://linkedin.com/in/someone', 'LinkedIn'],
     ]);
+  });
+  it('an icon without a dark version (the v3 tiles) has no swap class, so dark-mode code can never hide it', () => {
+    const tile = { light: 'https://signatures.heights.digital/icons/v3/phone.png' };
+    const h = buildSignatureHtml({ name: 'J', title: 'T', phone: full.phone, icons: { phone: tile } });
+    const row = h.match(/<table[^>]*margin-top:10px;"><tr>(.*?)<\/tr><\/table>/)![1];
+    expect(row).toMatch(/<a href="tel:\+351912345678"[^>]*><img src="https:\/\/signatures\.heights\.digital\/icons\/v3\/phone\.png" width="30" height="30" alt="\+351 912 345 678" style="[^"]*display:block;">/);
+    expect(row).not.toMatch(/hs-ic/);
   });
   it('only shows icons for filled-in fields', () => {
     const h = buildSignatureHtml({ name: 'J', title: 'T', website: 'https://x.com/', icons: full.icons });

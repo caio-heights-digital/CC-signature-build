@@ -37,7 +37,7 @@
 
 :root {
   /* ---------- Colour ---------- */
-  --bg-page: #faf8f7;               /* [bg/page] page background */
+  --bg-page: #ffffff;               /* page background (white, by request; Figma bg/page is #FAF8F7) */
   --bg-panel: #f3f0ee;              /* [bg/surface-2] form panel and install guide */
   --bg-surface: #fdfdfc;            /* [bg/surface] upload box */
   --bg-track: #d9dbdc;              /* [bg/surface-3] upload progress track */
@@ -120,7 +120,7 @@
   --header-gap: 77px;         /* below the header, above the footer */
   --header-gap-narrow: 40px;
   --form-w: 450px;
-  --logo-h: 27px;             /* CarbonChain logo, top left */
+  --logo-h: 48px;             /* CarbonChain logo, top left */
   --footer-logo-h: 14px;      /* HEIGHTS logo in "Built by", about the height of the footer text's capitals */
   --built-by-gap: 8px;
   --group-gap: 14px;

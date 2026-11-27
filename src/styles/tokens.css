@@ -1,36 +1,105 @@
-/* Design tokens, from the Heights SaaS Figma file. Change a value here and it changes everywhere. */
+/* Design tokens for the tool's own interface (the page, form, buttons and preview frame).
+   Every colour, font, text size, corner, border and spacing value used by main.css lives here,
+   so restyling the tool for another client is mostly a matter of editing this one file.
+
+   Not in here, on purpose:
+   - The email signature itself (src/template/): it has its own fixed colours and fonts, because email apps
+     ignore page styles. Changing this file never changes a signature.
+   - The dark-mode imitation in the preview (bottom of main.css): those colours copy what email apps do to the
+     signature, so they belong to the signature, not the interface.
+   - Images that carry their own colours: the logo (src/assets/heights-logo.svg) and the two interface icons
+     (src/assets/icons/). Replace those files to restyle them.
+   See docs/NEW-CLIENT.md for everything that changes when this tool is set up for another client. */
 :root {
-  /* Colour styles */
-  --charcoal: #332d28;
-  --light-charcoal: #999693;
-  --lightest-grey: #ebeae9;
-  --light-grey: #cccac9;
-  --black: #01000c;
-  --white: #ffffff;
-  --panel: #f7f7f6;
-  --accent: #fe6c23;   /* required asterisk, logo mark */
-  --lime: #cafc3b;     /* primary CTA */
-  --switch-off: #d2d5da;
+  /* ---------- Colour ---------- */
+  --charcoal: #332d28;        /* main text, outlined buttons, selected tabs */
+  --light-charcoal: #999693;  /* hints, placeholders, field underline */
+  --lightest-grey: #ebeae9;   /* preview border, unselected Light/Dark tab, progress track */
+  --light-grey: #cccac9;      /* not used at the moment */
+  --black: #01000c;           /* label on the Copy button */
+  --white: #ffffff;           /* page background, upload box */
+  --panel: #f7f7f6;           /* form panel and install guide */
+  --accent: #fe6c23;          /* required asterisk, keyboard focus, link hover */
+  --lime: #cafc3b;            /* Copy signature button */
+  --lime-hover: #bdf01f;
+  --switch-off: #d2d5da;      /* not used at the moment (was the old on/off switch) */
   --error: #c4320a;
   --ok: #2f7a3b;
+  --notice-bg: #fff6dc;       /* yellow notice banner */
+  --notice-border: #c9a227;
+  --preview-bg: #fff;         /* behind the signature in the Light preview */
 
-  /* Type */
+  /* ---------- Type ---------- */
   --font: "Neue Haas Grotesk Text Pro", "Neue Haas Grotesk Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --fs-body: 16px;            /* page default, footer, buttons, Light/Dark tabs */
+  --fs-header: 18px;          /* tool name, top right */
+  --fs-header-phone: 15px;
   --fs-h2: 20px;
   --fs-h3: 16px;
   --fs-label: 16px;
   --fs-input: 18px;
   --fs-small: 14px;
+  --fs-steps: 15px;           /* install steps */
+  --fs-status: 13px;          /* field errors, "uploaded" tick */
   --fs-hint: 12px;
   --lh: 1.45;
+  --lh-tight: 1.2;            /* tool name, top right */
+  --lh-drop: 1.31;            /* upload box text */
+  --fw-heading: 500;          /* section titles (h2) */
+  --fw-subheading: 700;       /* group titles (h3) */
+  --fw-strong: 500;           /* first line of an upload error */
+  --heading-case: uppercase;  /* h2 */
+  --heading-opacity: .8;
+  --button-case: uppercase;
+  --tracking-drop: .14px;
+  --tracking-seg: .16px;
 
-  /* Space and layout */
+  /* ---------- Corners and borders ---------- */
+  --pill: 100px;              /* buttons and install tabs */
+  --radius-field: 0;
+  --field-line: .5px;         /* underline under each field */
+  --field-line-focus: 1px;
+  --border: 1px;              /* buttons, preview frame, tabs */
+  --rule: 2px;                /* left edge of error and notice boxes */
+  --focus-ring: 2px;
+  --focus-offset: 2px;
+  --link-offset: 3px;         /* underline gap on text links */
+  --drop-over: 1.5px;         /* upload box outline while a file is dragged over it */
+  --bar: 3px;                 /* upload progress bar */
+
+  /* ---------- Space and layout ---------- */
   --gap-xs: 4px;
   --gap-s: 8px;
   --gap-m: 16px;
   --gap-l: 24px;
   --gap-xl: 48px;
   --page-max: 1200px;
+  --page-pad-y: 48px;
+  --page-pad-x: 16px;
+  --header-gap: 77px;         /* below the header, above the footer */
+  --header-gap-narrow: 40px;
   --form-w: 450px;
-  --pill: 100px;
+  --logo-w: clamp(160px, 27vw, 326px);
+  --group-gap: 14px;
+  --field-pad: 6px;
+  --input-gap: 10px;
+  --drop-pad: 20px 16px;
+  --drop-gap: 10px;
+  --upload-pad: 16px;
+  --thumb: 72px;
+  --meta-gap: 6px;
+  --box-pad: 10px 12px;       /* upload error box */
+  --banner-pad: 12px 16px;
+  --btn-pad: 12px 22px;
+  --btn-gap: 6px;
+  --btn-row-gap: 15px;
+  --seg-pad: 12px 20px;
+  --tab-pad: 9px 16px;
+  --preview-pad: 24px;
+  --preview-pad-phone: 16px;
+  --install-pad: 20px 24px;
+  --install-gap: 20px;
+  --steps-indent: 20px;
+  --steps-gap: 6px;
+  --sticky-top: 24px;
 }
